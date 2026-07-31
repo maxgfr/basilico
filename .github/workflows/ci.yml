@@ -39,7 +39,7 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - id: pw
         run: echo "v=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
-      - uses: actions/cache@v4
+      - uses: actions/cache@v6
         id: pwcache
         with:
           path: ~/.cache/ms-playwright
@@ -56,7 +56,7 @@ jobs:
       # (service worker module, alarmes, offscreen) n'échoue qu'à l'exécution.
       - run: pnpm --filter @basilico/extension build
       - run: pnpm --filter @basilico/extension e2e
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: ${{ !cancelled() }}
         with:
           name: playwright-report
