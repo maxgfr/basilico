@@ -30,11 +30,11 @@ const OPTIONS: { value: Theme; label: string; icon: React.ReactNode }[] = [
 ]
 
 /**
- * Bascule clair / sombre / auto directement dans l'en-tête.
+ * Light / dark / auto switch, right in the header.
  *
- * Le thème est le réglage qu'on change le plus souvent et le plus vite ; le
- * chercher dans une page de réglages est une friction inutile. Il y reste aussi,
- * avec ses explications.
+ * The theme is the setting people change most often and most quickly; hunting
+ * for it inside a settings page is needless friction. It stays there too, with
+ * its explanations.
  */
 export function ThemeToggle() {
   const theme = useApp((s) => s.settings.theme)

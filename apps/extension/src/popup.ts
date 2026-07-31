@@ -3,11 +3,11 @@ import { MODE_LABEL, STORAGE_KEY, type Phase } from './protocol'
 const APP_URL = 'https://maxgfr.github.io/basilico/'
 
 /**
- * Le popup n'est qu'un cadran de lecture : il n'offre aucun contrôle du minuteur.
+ * The popup is a read-only dial: it offers no timer controls at all.
  *
- * C'est délibéré. Piloter le minuteur depuis deux endroits créerait deux sources
- * de vérité, et donc des divergences à arbitrer à chaque désynchronisation.
- * L'app décide, l'extension alerte.
+ * That is deliberate. Driving the timer from two places would create two sources
+ * of truth, and therefore divergences to arbitrate on every desync. The app
+ * decides, the extension alerts.
  */
 
 function clock(ms: number): string {
@@ -45,5 +45,5 @@ async function refresh(): Promise<void> {
 }
 
 void refresh()
-// Le popup est éphémère : un rafraîchissement par seconde tant qu'il est ouvert suffit.
+// The popup is ephemeral: refreshing once a second while it is open is plenty.
 setInterval(() => void refresh(), 1000)

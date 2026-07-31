@@ -6,9 +6,8 @@ const DIST = resolve(import.meta.dirname, '../dist')
 
 test('the content script is self-contained', () => {
   const code = readFileSync(`${DIST}/content.js`, 'utf8')
-  // Un content script MV3 est injecté comme script classique : le moindre
-  // `import` le ferait échouer silencieusement à l'exécution, et rien dans le
-  // build ne le signale.
+  // An MV3 content script is injected as a classic script: a single `import`
+  // would make it fail silently at runtime, and nothing in the build says so.
   expect(code).not.toMatch(/^\s*import[\s{]/m)
   expect(code).not.toMatch(/from\s*["']\.\//)
 })
@@ -20,7 +19,7 @@ test('the service worker boots and the manifest is coherent', async ({ backgroun
   expect(manifest.permissions).toEqual(
     expect.arrayContaining(['alarms', 'notifications', 'storage', 'offscreen']),
   )
-  // Le service worker doit être un module : le build produit des ES modules.
+  // The service worker must be a module: the build emits ES modules.
   expect(manifest.background?.type).toBe('module')
 })
 
@@ -36,16 +35,16 @@ test('an announced deadline arms an alarm, and clearing it removes the alarm', a
       phase: { mode: 'focus', endsAt, taskTitle: 'Écrire le noyau' },
     })
     return {
-      // `chrome.alarms.get` renvoie un objet Alarm : l'échéance s'y appelle
-      // `scheduledTime`, `when` n'existe qu'à la création.
+      // `chrome.alarms.get` returns an Alarm object: the deadline is called
+      // `scheduledTime` there, `when` only exists at creation time.
       scheduledTime: (await chrome.alarms.get('basilico-phase-end'))?.scheduledTime ?? null,
       phase: (await chrome.storage.session.get('basilico:phase'))['basilico:phase'],
       badge: await chrome.action.getBadgeText({}),
     }
   }, endsAt)
 
-  // L'alarme porte l'échéance absolue : rien à rattraper si le service worker
-  // s'endort entre-temps.
+  // The alarm carries the absolute deadline: nothing to catch up on if the
+  // service worker falls asleep in the meantime.
   expect(armed.scheduledTime).toBe(endsAt)
   expect(armed.phase).toMatchObject({ mode: 'focus', endsAt, taskTitle: 'Écrire le noyau' })
   expect(armed.badge).toBe('25')
@@ -78,8 +77,8 @@ test('a deadline already in the past arms nothing', async ({ extensionPage }) =>
 test('the alarm actually fires a notification', async ({ extensionPage, background }) => {
   const notifications: string[] = []
   await background.evaluate(() => {
-    // On observe l'appel plutôt que d'attendre une vraie notification système,
-    // que Chromium n'affiche pas en environnement de test.
+    // We observe the call rather than wait for a real system notification,
+    // which Chromium does not display in a test environment.
     const original = chrome.notifications.create.bind(chrome.notifications)
     const seen: string[] = []
     ;(globalThis as unknown as { __seen: string[] }).__seen = seen
@@ -92,8 +91,8 @@ test('the alarm actually fires a notification', async ({ extensionPage, backgrou
     }) as typeof chrome.notifications.create
   })
 
-  // Échéance à 100 ms : `chrome.alarms` n'accepte pas de délai plus court en
-  // périodique, mais une échéance ponctuelle proche est honorée.
+  // A 100 ms deadline: `chrome.alarms` refuses shorter periodic intervals, but
+  // a one-shot deadline this close is honoured.
   await extensionPage.evaluate(async () => {
     await chrome.runtime.sendMessage({
       source: 'basilico-app',

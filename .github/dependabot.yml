@@ -1,6 +1,6 @@
 version: 2
 updates:
-  # Sans `groups`, c'est une douzaine de PR par semaine qu'on finit par ne plus lire.
+  # Without `groups` it's a dozen PRs a week that nobody ends up reading.
   - package-ecosystem: npm
     directory: '/'
     schedule:
@@ -12,7 +12,7 @@ updates:
       prod-deps:
         dependency-type: production
 
-  # C'est ce qui empêche les versions d'actions de pourrir en silence.
+  # This is what keeps action versions from rotting in silence.
   - package-ecosystem: github-actions
     directory: '/'
     schedule:

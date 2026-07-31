@@ -1,13 +1,12 @@
 import { FROM_APP, FROM_EXTENSION, type AppMessage } from './protocol'
 
 /**
- * Pont entre la page et l'extension.
+ * Bridge between the page and the extension.
  *
- * La page ne peut pas parler directement au service worker sans connaître
- * l'identifiant de l'extension, qui diffère entre une installation en mode
- * développeur et une publication au Store. Ce content script relaie donc dans
- * les deux sens, et signale sa présence pour que l'app sache qu'elle peut
- * déléguer ses alertes.
+ * The page cannot talk to the service worker directly without knowing the
+ * extension id, which differs between a developer-mode install and a Store
+ * publication. So this content script relays both ways, and announces itself so
+ * the app knows it can delegate its alerts.
  */
 
 const announce = () => {
@@ -22,15 +21,15 @@ window.addEventListener('message', (event) => {
   const message = event.data as AppMessage | undefined
   if (!message || message.source !== FROM_APP) return
 
-  // Le `ping` reçoit sa réponse ici, sans passer par le service worker :
-  // le content script tourne à `document_start`, donc son annonce spontanée
-  // part souvent avant que l'application n'ait posé son écouteur.
+  // The `ping` is answered right here, without going through the service
+  // worker: the content script runs at `document_start`, so its spontaneous
+  // announcement often fires before the app has attached its listener.
   if (message.type === 'ping') {
     announce()
     return
   }
 
-  // Le service worker peut être endormi : l'échec d'envoi n'est pas une erreur.
+  // The service worker may be asleep: a failed send is not an error.
   void chrome.runtime.sendMessage(message).catch(() => {})
 })
 

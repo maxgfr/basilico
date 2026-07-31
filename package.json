@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Un minuteur de focus open source, local-first, avec tâches, statistiques et alertes.",
+  "description": "A local-first focus timer with tasks, alerts and real statistics.",
   "license": "MIT",
   "packageManager": "pnpm@10.33.0",
   "engines": {

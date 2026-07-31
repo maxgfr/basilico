@@ -11,15 +11,15 @@ const MODE_COLOR = {
 } as const
 
 /**
- * Compte à rebours dans le titre de l'onglet et favicon teinté par le mode.
+ * Countdown in the tab title, and a favicon tinted by mode.
  *
- * C'est la demande qui revient le plus chez les utilisateurs de minuteurs web :
- * pouvoir travailler dans un autre onglet et garder le temps restant sous les yeux.
+ * This is the single most requested thing among users of web timers: being able
+ * to work in another tab and still see the remaining time.
  */
 export function useDocumentTitle(): void {
   const timer = useApp((s) => s.timer)
   const live = timer.status === 'running' || timer.status === 'overtime'
-  // Une seconde suffit pour un titre d'onglet : inutile de repeindre 4 fois par seconde.
+  // One second is plenty for a tab title: no need to repaint four times a second.
   const now = useNow(live, 1000)
 
   useEffect(() => {

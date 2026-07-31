@@ -1,10 +1,10 @@
 import '@testing-library/jest-dom/vitest'
 
 /**
- * jsdom n'implémente pas `matchMedia`. On le comble ici plutôt que de truffer le
- * code applicatif de gardes défensives pour une API présente dans tous les vrais
- * navigateurs. Par défaut, aucune requête média ne correspond : les tests
- * s'exécutent donc en thème sombre, celui de l'app.
+ * jsdom does not implement `matchMedia`. We fill the gap here rather than
+ * littering application code with defensive guards for an API present in every
+ * real browser. By default no media query matches, so tests run in the dark
+ * theme — the app's own.
  */
 if (typeof window !== 'undefined' && typeof window.matchMedia !== 'function') {
   window.matchMedia = (query: string): MediaQueryList =>

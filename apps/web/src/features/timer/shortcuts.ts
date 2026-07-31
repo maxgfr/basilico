@@ -12,7 +12,7 @@ export const SHORTCUTS = [
   { keys: 'T', label: 'Go to stats' },
 ] as const
 
-/** Vrai quand l'utilisateur est en train de taper : on ne détourne pas ses touches. */
+/** True while the user is typing: we don't hijack their keystrokes. */
 function isTyping(target: EventTarget | null): boolean {
   if (!(target instanceof HTMLElement)) return false
   return (
@@ -35,8 +35,8 @@ export function useKeyboardShortcuts(): void {
       switch (event.key) {
         case ' ':
           event.preventDefault()
-          // Le geste clavier vaut geste utilisateur : c'est le bon moment pour
-          // débloquer le contexte audio, sinon la sonnerie serait muette.
+          // A key press counts as a user gesture: the right moment to unlock the
+          // audio context, otherwise the alarm would be silent.
           void sound.unlock()
           store.toggle(now)
           break

@@ -10,15 +10,15 @@ import {
 const DIST = resolve(import.meta.dirname, '../dist')
 
 /**
- * Charge réellement l'extension dans Chromium.
+ * Actually loads the extension into Chromium.
  *
- * C'est la seule façon d'éprouver le câblage MV3 — service worker de type
- * module, alarmes, `chrome.storage.session`, badge — qui ne se voit ni au
- * typecheck ni au build, et qui échoue silencieusement à l'exécution.
+ * This is the only way to exercise the MV3 wiring — module-type service worker,
+ * alarms, `chrome.storage.session`, badge — which neither typecheck nor build
+ * can see, and which fails silently at runtime.
  *
- * Les messages partent d'une page d'extension et non du service worker :
- * Chrome ne délivre pas un message à son propre expéditeur, et c'est de toute
- * façon le chemin réel — la page parle, le service worker écoute.
+ * Messages are sent from an extension page rather than the service worker:
+ * Chrome does not deliver a message back to its own sender, and it is the real
+ * path anyway — the page speaks, the service worker listens.
  */
 export const test = base.extend<{
   context: BrowserContext
@@ -26,7 +26,7 @@ export const test = base.extend<{
   extensionId: string
   extensionPage: Page
 }>({
-  // eslint-disable-next-line no-empty-pattern -- signature imposée par Playwright
+  // eslint-disable-next-line no-empty-pattern -- signature imposed by Playwright
   context: async ({}, use) => {
     const context = await chromium.launchPersistentContext('', {
       channel: 'chromium',
@@ -37,7 +37,7 @@ export const test = base.extend<{
   },
 
   background: async ({ context }, use) => {
-    // Un service worker MV3 démarre à la demande : il peut ne pas être là tout de suite.
+    // An MV3 service worker starts on demand: it may not be there immediately.
     const worker = context.serviceWorkers()[0] ?? (await context.waitForEvent('serviceworker'))
     await use(worker)
   },

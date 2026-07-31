@@ -32,8 +32,8 @@ import {
 } from '@basilico/core'
 
 /**
- * `maxgfr.github.io` est une origine partagée par tous les projets Pages du compte :
- * chaque clé est préfixée pour ne pas entrer en collision avec un autre dépôt.
+ * `maxgfr.github.io` is an origin shared by every Pages project on the account:
+ * each key is prefixed so it cannot collide with another repository.
  */
 export const STORAGE_KEY = 'basilico:v1:app'
 
@@ -45,9 +45,9 @@ type AppState = {
   sessions: SessionRecord[]
   tasks: Task[]
   activeTaskId: string | null
-  /** Dernière session close, pour le bandeau de rattrapage. */
+  /** Last closed session, for the catch-up banner. */
   lastEnded: EndedSession | null
-  /** File d'effets de bord (son, notification) drainée par le runtime. */
+  /** Queue of side effects (sound, notification) drained by the runtime. */
   pending: TimerEvent[]
   hydrated: boolean
 
@@ -84,7 +84,7 @@ export const useApp = create<AppState>()(
     (set, get) => {
       const ctx = (now: number) => ({ now, settings: get().settings, uid })
 
-      /** Applique les événements du noyau : journal, compteurs, file d'effets. */
+      /** Applies the core's events: log, counters, side-effect queue. */
       const commit = (result: { state: TimerState; events: TimerEvent[] }) => {
         if (result.events.length === 0) {
           set({ timer: result.state })
@@ -128,8 +128,15 @@ export const useApp = create<AppState>()(
 
         startNow: (now) => {
           const state = get()
+          const task = state.tasks.find((t) => t.id === state.activeTaskId) ?? null
           set({
-            timer: startPhase(state.timer, ctx(now), { taskId: state.activeTaskId }),
+            // The tag travels with the session so the per-tag stats can exist at
+            // all: reading it back from the task later would rewrite history
+            // whenever a task is retagged.
+            timer: startPhase(state.timer, ctx(now), {
+              taskId: state.activeTaskId,
+              tag: task?.tag ?? null,
+            }),
             lastEnded: null,
             pending: [...state.pending, { type: 'phase-started', mode: state.timer.mode }],
           })
@@ -156,8 +163,8 @@ export const useApp = create<AppState>()(
 
         updateSettings: (patch) => {
           const settings = { ...get().settings, ...patch }
-          // Les nouvelles durées ne s'appliquent qu'à l'arrêt : on ne rallonge
-          // jamais une phase déjà en cours sous les pieds de l'utilisateur.
+          // New durations only apply while idle: we never stretch a phase that
+          // is already running out from under the user.
           set({ settings, timer: applySettings(get().timer, settings) })
         },
 
@@ -217,13 +224,13 @@ export const useApp = create<AppState>()(
       name: STORAGE_KEY,
       version: 1,
       storage: createJSONStorage(() => localStorage),
-      // `pending` et `hydrated` sont éphémères : les persister rejouerait un son
-      // au rechargement et mentirait sur l'état d'hydratation.
+      // `pending` and `hydrated` are ephemeral: persisting them would replay a
+      // sound on reload and lie about the hydration state.
       //
-      // `lastEnded`, en revanche, est persisté exprès : c'est le message
-      // « ta session s'est terminée il y a X ». Sans lui, quelqu'un qui ferme
-      // l'onglet pendant un focus et revient plus tard ne verrait jamais
-      // l'information pour laquelle le rattrapage existe.
+      // `lastEnded`, on the other hand, is persisted on purpose: it is the
+      // "your session ended X ago" message. Without it, someone who closes the
+      // tab mid-focus and comes back later would never see the very information
+      // the catch-up exists for.
       partialize: (state) => ({
         settings: state.settings,
         timer: state.timer,

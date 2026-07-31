@@ -1,56 +1,58 @@
-# Contribuer à basilico
+# Contributing to basilico
 
-Merci d'y jeter un œil. Les issues et les pull requests sont bienvenues.
+Thanks for taking a look. Issues and pull requests are welcome.
 
-## Démarrer
+## Getting started
 
 ```bash
 pnpm install
 pnpm dev
 ```
 
-Avant d'ouvrir une pull request :
+Before opening a pull request:
 
 ```bash
 pnpm lint && pnpm typecheck && pnpm test && pnpm build
 ```
 
-Les tests de bout en bout demandent un navigateur :
+End-to-end tests need a browser:
 
 ```bash
 pnpm --filter @basilico/web exec playwright install chromium
 pnpm --filter @basilico/web e2e
+pnpm --filter @basilico/extension build && pnpm --filter @basilico/extension e2e
 ```
 
-## Où mettre quoi
+## Where things go
 
-- `packages/core` — toute logique métier. **Aucune dépendance au DOM, et jamais d'accès direct à
-  l'horloge** : le temps est toujours passé en paramètre. C'est ce qui rend le minuteur testable.
-- `apps/web/src/platform` — tout ce qui touche au navigateur (notifications, audio, stockage, wake
-  lock). Isolé ici pour que le reste de l'app reste testable en jsdom.
-- `apps/web/src/features` — un dossier par écran.
+- `packages/core` — all business logic. **No DOM dependency, and never a direct
+  read of the clock**: time is always passed in as a parameter. That's what makes the timer testable.
+- `apps/web/src/platform` — everything that touches the browser (notifications, audio, storage,
+  wake lock). Isolated here so the rest of the app stays testable under jsdom.
+- `apps/web/src/features` — one folder per screen.
+- `apps/extension` — the Chrome MV3 extension.
 
-## Deux règles qui ne se négocient pas
+## Two rules that aren't up for negotiation
 
-1. **Le temps restant se calcule, il ne se décrémente pas.** Toute logique qui fait `restant -= 1000`
-   dérivera de plusieurs minutes dès que l'onglet passera en arrière-plan. On stocke une échéance
-   absolue et on la compare à `Date.now()`.
-2. **Le journal des sessions ne se réécrit pas.** Les statistiques sont recalculées à partir de lui ;
-   une session enregistrée ne change plus, à l'exception de l'annotation (note, ressenti, tag).
-
-## Avant de proposer une grosse fonctionnalité
-
-Ouvre une issue d'abord — ça évite d'écrire du code pour rien si la direction ne colle pas.
+1. **Remaining time is computed, never decremented.** Any logic doing `remaining -= 1000` will drift
+   by minutes as soon as the tab goes to the background. We store an absolute deadline and compare it
+   to `Date.now()`.
+2. **The session log is never rewritten.** Statistics are recomputed from it; a recorded session
+   doesn't change, apart from its annotation (note, rating, tag).
 
 ## TypeScript 7
 
-Le projet tourne sur TypeScript 7. C'est possible parce qu'on lint avec **oxlint** : la seule chose
-qui bloquait vraiment l'écosystème sur TS 7, c'est `typescript-eslint`, qui exige encore une API
-programmatique que TS 7 n'expose pas. Si tu réintroduis typescript-eslint, il faudra repasser
-TypeScript en `~6.0.x`.
+The project runs on TypeScript 7. That's possible because we lint with **oxlint**: the one thing
+genuinely holding the ecosystem back on TS 7 is `typescript-eslint`, which still requires a
+programmatic API TS 7 doesn't expose. If you reintroduce typescript-eslint, TypeScript has to go
+back to `~6.0.x`.
+
+## Before proposing a large feature
+
+Open an issue first — it saves writing code for nothing if the direction doesn't fit.
 
 ## Style
 
-Prettier et oxlint s'en chargent (`pnpm format`). Les commentaires expliquent **pourquoi**, pas quoi :
-le code dit déjà ce qu'il fait. Les messages de commit et les commentaires sont en français, comme le
-reste du projet.
+Prettier and oxlint handle it (`pnpm format`). Comments explain **why**, not what: the code already
+says what it does. Everything in this repository — code, comments, tests, docs, commit messages — is
+written in English.

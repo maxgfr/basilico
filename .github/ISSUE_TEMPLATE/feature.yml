@@ -1,27 +1,27 @@
-name: Idée ou amélioration
-description: Proposer une fonctionnalité ou un changement.
+name: Idea or improvement
+description: Suggest a feature or a change.
 labels: ['enhancement']
 body:
   - type: textarea
     id: problem
     attributes:
-      label: Le problème
-      description: Qu'est-ce qui te bloque aujourd'hui ? Décris la situation, pas la solution.
+      label: The problem
+      description: What gets in your way today? Describe the situation, not the solution.
     validations:
       required: true
 
   - type: textarea
     id: idea
     attributes:
-      label: Ce que tu proposes
+      label: What you'd suggest
     validations:
       required: true
 
   - type: checkboxes
     id: constraints
     attributes:
-      label: Compatible avec le projet
-      description: basilico est local-first et sans serveur. Ces contraintes ne changeront pas.
+      label: Fits the project
+      description: basilico is local-first and serverless. Those constraints aren't going to change.
       options:
-        - label: Ma proposition ne demande ni compte, ni serveur, ni service tiers.
+        - label: My suggestion needs no account, no server and no third-party service.
           required: true

@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Noyau de domaine de basilico : minuteur, cycles, sessions, tâches, statistiques. Zéro DOM.",
+  "description": "basilico's domain core: timer, cycles, sessions, tasks, statistics. Zero DOM.",
   "main": "./src/index.ts",
   "types": "./src/index.ts",
   "exports": {

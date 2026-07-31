@@ -1,12 +1,11 @@
 import type { SessionRecord } from './types'
 
 /**
- * Le journal est append-only : une session enregistrée n'est plus recalculée,
- * ce qui rend toutes les statistiques reproductibles et l'export trivial.
+ * The log is append-only: a recorded session is never recomputed, which makes
+ * every statistic reproducible and the export trivial.
  *
- * Seule exception, volontaire et bornée : l'annotation post-session (note,
- * ressenti, tag), que l'utilisateur saisit juste après la fin. Elle ne touche
- * jamais aux durées ni au résultat.
+ * One deliberate, bounded exception: the post-session annotation (note, rating,
+ * tag) the user types right after it ends. It never touches durations or outcome.
  */
 export function appendSession(
   log: readonly SessionRecord[],
@@ -29,7 +28,7 @@ export function annotateSession(
   return log.map((s) => (s.id === id ? { ...s, ...patch } : s))
 }
 
-/** Sessions d'une fenêtre temporelle, bornes en ms epoch, `to` exclu. */
+/** Sessions within a time window, bounds in epoch ms, `to` excluded. */
 export function sessionsBetween(
   log: readonly SessionRecord[],
   from: number,
@@ -38,7 +37,7 @@ export function sessionsBetween(
   return log.filter((s) => s.startedAt >= from && s.startedAt < to)
 }
 
-/** Un focus « qui compte » : terminé, ni annulé ni passé. */
+/** A focus session that counts: completed, neither voided nor skipped. */
 export function isCountedFocus(session: SessionRecord): boolean {
   return session.mode === 'focus' && session.outcome === 'completed'
 }

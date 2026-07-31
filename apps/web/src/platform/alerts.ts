@@ -13,8 +13,8 @@ const NEXT_LABEL = {
 } as const
 
 /**
- * Branche les alertes sur le minuteur : sonnerie programmée à l'avance,
- * notification, tic-tac et wake lock.
+ * Wires the alerts onto the timer: pre-scheduled alarm, notification, ticking
+ * and wake lock.
  */
 export function useAlerts(): void {
   const timer = useApp((s) => s.timer)
@@ -22,12 +22,12 @@ export function useAlerts(): void {
   const drainEvents = useApp((s) => s.drainEvents)
   const pending = useApp((s) => s.pending)
 
-  /** Échéance pour laquelle une sonnerie est déjà programmée sur l'horloge audio. */
+  /** Deadline an alarm is already scheduled for on the audio clock. */
   const scheduledFor = useRef<number | null>(null)
   const wakeLock = useRef<ReturnType<typeof createWakeLock> | null>(null)
 
-  // Programmation de la sonnerie sur l'échéance absolue. C'est ce qui la fait
-  // sonner à l'heure même si l'onglet est ralenti ou gelé entre-temps.
+  // Scheduling the alarm on the absolute deadline. That is what makes it ring
+  // on time even if the tab gets throttled or frozen in the meantime.
   useEffect(() => {
     const live = timer.status === 'running' || timer.status === 'overtime'
     if (!live || timer.endsAt === null || !settings.sound.enabled) {
@@ -47,7 +47,7 @@ export function useAlerts(): void {
     settings.sound.volume,
   ])
 
-  // Tic-tac, uniquement pendant un focus actif.
+  // Ticking, only during an active focus session.
   useEffect(() => {
     const ticking = settings.sound.ticking && timer.status === 'running' && timer.mode === 'focus'
     if (ticking) sound.startTicking(settings.sound.volume)
@@ -55,7 +55,7 @@ export function useAlerts(): void {
     return () => sound.stopTicking()
   }, [settings.sound.ticking, settings.sound.volume, timer.status, timer.mode])
 
-  // Wake lock optionnel.
+  // Optional wake lock.
   useEffect(() => {
     wakeLock.current ??= createWakeLock()
     const lock = wakeLock.current
@@ -69,7 +69,7 @@ export function useAlerts(): void {
     return () => wakeLock.current?.dispose()
   }, [])
 
-  // Effets de bord des événements du noyau : notification, et sonnerie de secours.
+  // Side effects of the core's events: notification, and fallback alarm.
   useEffect(() => {
     if (pending.length === 0) return
     const events = drainEvents()
@@ -77,9 +77,9 @@ export function useAlerts(): void {
     for (const event of events) {
       if (event.type !== 'session-ended') continue
 
-      // La sonnerie programmée a déjà retenti à l'heure. On ne rejoue que si
-      // aucune n'était programmée pour cette échéance (fin manuelle, flowtime),
-      // ou si le contexte audio a été interrompu entre-temps — le cas Safari.
+      // The scheduled alarm already rang on time. We only replay when none was
+      // scheduled for this deadline (manual finish, flowtime), or when the audio
+      // context got interrupted in the meantime — the Safari case.
       const wasScheduled = scheduledFor.current === event.record.endedAt
       if (settings.sound.enabled && (!wasScheduled || !sound.unlocked)) {
         void sound.unlock().then(() => {

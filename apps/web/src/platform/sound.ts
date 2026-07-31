@@ -1,14 +1,13 @@
 /**
- * Sonnerie planifiée sur l'horloge audio.
+ * Alarm scheduled on the audio clock.
  *
- * `AudioContext.currentTime` est une horloge matérielle, indépendante de la boucle
- * d'événements : une sonnerie programmée avec `start(when)` part à l'heure même si
- * le thread principal est ralenti par le throttling d'arrière-plan, voire gelé par
- * l'économiseur d'énergie. C'est le seul mécanisme d'alerte qui survit à ça sans
- * serveur, d'où le soin qu'on y met.
+ * `AudioContext.currentTime` is a hardware clock, independent of the event loop:
+ * a sound scheduled with `start(when)` fires on time even when the main thread
+ * is throttled in the background, or frozen by Energy Saver. It is the only
+ * alerting mechanism that survives that without a server, hence the care here.
  *
- * Le contexte est créé et débloqué au premier geste utilisateur : construit plus
- * tôt, il naîtrait `suspended` et la sonnerie serait muette.
+ * The context is created and unlocked on the first user gesture: built any
+ * earlier it would be born `suspended` and the alarm would be silent.
  */
 
 export type AlarmName = 'chime' | 'bell' | 'blip'
@@ -40,14 +39,14 @@ class SoundPlayer {
     return this.ctx !== null && this.ctx.state === 'running'
   }
 
-  /** À appeler depuis un handler de geste utilisateur, jamais au chargement. */
+  /** Call from a user-gesture handler, never on page load. */
   async unlock(): Promise<void> {
     try {
       this.ctx ??= new AudioContext()
-      // Safari passe le contexte en `interrupted` quand l'onglet part en arrière-plan.
+      // Safari moves the context to `interrupted` when the tab goes background.
       if (this.ctx.state !== 'running') await this.ctx.resume()
     } catch {
-      // Pas d'audio disponible : l'app reste parfaitement utilisable.
+      // No audio available: the app stays perfectly usable.
     }
   }
 
@@ -78,7 +77,7 @@ class SoundPlayer {
     }
   }
 
-  /** Programme la sonnerie pour dans `delayMs`. Précision à la milliseconde près. */
+  /** Schedules the alarm for `delayMs` from now, accurate to the millisecond. */
   schedule(name: AlarmName, delayMs: number, volume: number): void {
     if (!this.ctx || volume <= 0) return
     this.cancel()
@@ -90,21 +89,21 @@ class SoundPlayer {
     this.voice(name, this.ctx.currentTime + 0.01, volume)
   }
 
-  /** Annule une sonnerie programmée : pause, reset, ou fin manuelle de la phase. */
+  /** Cancels a scheduled alarm: pause, reset, or ending the phase by hand. */
   cancel(): void {
     for (const osc of this.scheduled) {
       try {
         osc.stop()
       } catch {
-        // Déjà arrêté.
+        // Already stopped.
       }
     }
     this.scheduled = []
   }
 
   /**
-   * Tic-tac. Programmé quelques secondes à l'avance et réalimenté tant que la page
-   * est visible : inutile de le faire tourner dans un onglet qu'on ne regarde pas.
+   * Ticking. Scheduled a few seconds ahead and topped up while the page is
+   * visible: no point running it in a tab nobody is looking at.
    */
   startTicking(volume: number): void {
     if (!this.ctx || this.tickTimer !== null || volume <= 0) return

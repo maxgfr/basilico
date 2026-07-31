@@ -1,19 +1,19 @@
 /**
- * Assemble le paquet chargeable par Chrome : le build Vite produit les scripts,
- * il reste à y déposer le manifeste et les icônes.
+ * Assembles the folder Chrome can load: the Vite build produces the scripts, all
+ * that's left is dropping the manifest and the icons in.
  *
- * Le manifeste n'est volontairement pas un asset Vite : il doit rester lisible
- * et modifiable à la main, et le hacher casserait le chargement de l'extension.
+ * The manifest is deliberately not a Vite asset: it must stay readable and
+ * editable by hand, and hashing it would break loading the extension.
  */
 import { cp, readFile, writeFile } from 'node:fs/promises'
 
 const manifest = JSON.parse(await readFile('manifest.json', 'utf8'))
 
-// La version du manifeste suit celle du paquet : une seule source de vérité.
+// The manifest version follows the package's: a single source of truth.
 const pkg = JSON.parse(await readFile('package.json', 'utf8'))
 manifest.version = pkg.version
 
 await writeFile('dist/manifest.json', `${JSON.stringify(manifest, null, 2)}\n`)
 await cp('icons', 'dist/icons', { recursive: true })
 
-console.log('dist/ prêt — Chrome → Extensions → Charger l’extension non empaquetée')
+console.log('dist/ ready — Chrome → Extensions → Load unpacked')

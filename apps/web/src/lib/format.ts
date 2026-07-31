@@ -1,6 +1,6 @@
 const pad = (n: number) => String(n).padStart(2, '0')
 
-/** `23:41`, ou `1:05:00` au-delà d'une heure. Toujours à afficher en chiffres tabulaires. */
+/** `23:41`, or `1:05:00` past an hour. Always render with tabular figures. */
 export function formatClock(ms: number): string {
   const total = Math.max(0, Math.ceil(ms / 1000))
   const hours = Math.floor(total / 3600)
@@ -9,7 +9,7 @@ export function formatClock(ms: number): string {
   return hours > 0 ? `${hours}:${pad(minutes)}:${pad(seconds)}` : `${pad(minutes)}:${pad(seconds)}`
 }
 
-/** Le même temps, mais sans les secondes qui défilent : c'est ça qui angoisse. */
+/** The same time without the ticking seconds — those are what make people anxious. */
 export function formatApproximate(ms: number): string {
   const minutes = Math.ceil(ms / 60_000)
   if (ms <= 0) return 'done'
@@ -20,7 +20,7 @@ export function formatApproximate(ms: number): string {
   return rest === 0 ? `about ${hours}h` : `about ${hours}h ${rest}`
 }
 
-/** Durée lisible pour les statistiques : `2h 05`, `45 min`, `—`. */
+/** Readable duration for the stats: `2h 05`, `45 min`, `—`. */
 export function formatDuration(ms: number): string {
   const minutes = Math.round(ms / 60_000)
   if (minutes <= 0) return '—'
@@ -34,7 +34,7 @@ export function formatSigned(ms: number): string {
   return ms < 0 ? `+${formatClock(-ms)}` : formatClock(ms)
 }
 
-/** « 12 minutes ago », pour le message de rattrapage. */
+/** "12 minutes ago", for the catch-up message. */
 export function formatAgo(ms: number): string {
   const minutes = Math.round(ms / 60_000)
   if (minutes < 1) return 'just now'

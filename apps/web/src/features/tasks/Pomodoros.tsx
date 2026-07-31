@@ -1,8 +1,8 @@
 type Props = { done: number; estimated: number }
 
 /**
- * `●●●○○ 3/5` : les pastilles se lisent d'un coup d'œil, le chiffre reste là pour
- * lever l'ambiguïté quand l'estimation est dépassée (des pastilles pleines en trop).
+ * `●●●○○ 3/5`: the dots read at a glance, the number stays to remove the
+ * ambiguity once the estimate is exceeded (extra filled dots).
  */
 export function Pomodoros({ done, estimated }: Props) {
   const slots = Math.max(estimated, done)

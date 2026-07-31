@@ -1,12 +1,12 @@
 import type { Mode } from '@basilico/core'
 
-// Unités du viewBox : le SVG est fluide, seule la boîte CSS décide de la taille réelle.
+// viewBox units: the SVG is fluid, only the CSS box decides the real size.
 const SIZE = 280
 const STROKE = 10
 const RADIUS = (SIZE - STROKE) / 2
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS
 
-/** Classes statiques : Tailwind ne détecte pas les noms de classes construits. */
+/** Static classes: Tailwind cannot detect class names built at runtime. */
 const HUE: Record<Mode, string> = {
   focus: 'text-focus',
   shortBreak: 'text-short',
@@ -15,9 +15,9 @@ const HUE: Record<Mode, string> = {
 
 type Props = {
   mode: Mode
-  /** 0 à 1. Au-delà de l'échéance, l'anneau reste plein. */
+  /** 0 to 1. Past the deadline the ring simply stays full. */
   progress: number
-  /** L'anneau pulse doucement quand le temps est dépassé. */
+  /** The ring pulses gently once the time is up. */
   overtime?: boolean
   children: React.ReactNode
 }

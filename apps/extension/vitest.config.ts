@@ -1,9 +1,9 @@
 import { defineConfig } from 'vitest/config'
 
 /**
- * L'extension n'a pas de tests unitaires : sa logique tient dans le câblage MV3,
- * qui ne s'éprouve qu'avec l'extension réellement chargée dans Chromium. Ces
- * tests-là vivent dans `e2e/` et se lancent avec Playwright, pas ici.
+ * The extension has no unit tests: its logic is the MV3 wiring, which can only
+ * be exercised with the extension actually loaded into Chromium. Those tests
+ * live in `e2e/` and run under Playwright, not here.
  */
 export default defineConfig({
   test: {

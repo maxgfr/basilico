@@ -41,25 +41,25 @@ function focus(
 
 const at = (y: number, m: number, d: number, h = 10) => new Date(y, m - 1, d, h, 0, 0).getTime()
 
-describe('jours locaux', () => {
-  it('découpe les jours sur l’heure locale, pas sur UTC', () => {
-    // 23 h 30 locales le 31 : encore le 31, même si c'est déjà le 1er en UTC ailleurs.
+describe('local days', () => {
+  it('slices days on local time, not UTC', () => {
+    // 23:00 local on the 31st: still the 31st, even where UTC says the 1st.
     expect(dayKey(at(2026, 7, 31, 23))).toBe('2026-07-31')
     expect(dayKey(at(2026, 8, 1, 0))).toBe('2026-08-01')
   })
 
-  it('traverse le changement d’heure sans décaler les jours', () => {
-    // Nuit du 25 octobre 2026 en Europe/Paris : cette journée-là fait 25 heures.
+  it('crosses the daylight-saving change without shifting days', () => {
+    // The night of 25 October 2026 in Europe/Paris: that day lasts 25 hours.
     const before = startOfDay(at(2026, 10, 24, 12))
     expect(dayKey(addDays(before, 1))).toBe('2026-10-25')
     expect(dayKey(addDays(before, 2))).toBe('2026-10-26')
-    // Une addition naïve de 24 h retomberait sur le 25 une seconde fois.
+    // A naive +24h would land on the 25th a second time.
     expect(dayKey(startOfDay(at(2026, 10, 25, 12)) + 24 * 3_600_000)).not.toBe('2026-10-27')
   })
 })
 
-describe('résumé', () => {
-  it('compte le temps d’un focus annulé mais pas le pomodoro', () => {
+describe('summary', () => {
+  it('counts the time of a voided focus but not the pomodoro', () => {
     const s = summarize([
       focus(at(2026, 7, 31), 25),
       focus(at(2026, 7, 31, 12), 8, { outcome: 'voided' }),
@@ -70,7 +70,7 @@ describe('résumé', () => {
     expect(s.completionRate).toBe(0.5)
   })
 
-  it('sépare le temps de pause du temps de focus', () => {
+  it('separates break time from focus time', () => {
     const s = summarize([
       focus(at(2026, 7, 31), 25),
       focus(at(2026, 7, 31, 11), 5, { mode: 'shortBreak' }),
@@ -79,7 +79,7 @@ describe('résumé', () => {
     expect(s.breakMs).toBe(5 * MIN)
   })
 
-  it('additionne les interruptions', () => {
+  it('adds up interruptions', () => {
     const s = summarize([
       focus(at(2026, 7, 31), 25, { interruptions: { internal: 2, external: 1 } }),
       focus(at(2026, 7, 31, 12), 25, { interruptions: { internal: 1, external: 3 } }),
@@ -87,21 +87,21 @@ describe('résumé', () => {
     expect(s.interruptions).toEqual({ internal: 3, external: 4 })
   })
 
-  it('ne rend pas de taux de complétion sans focus', () => {
+  it('reports no completion rate without any focus session', () => {
     expect(summarize([]).completionRate).toBeNull()
   })
 })
 
-describe('série journalière', () => {
-  it('remplit les jours vides', () => {
+describe('daily series', () => {
+  it('fills in empty days', () => {
     const series = dailySeries([focus(at(2026, 7, 29), 25)], 3, at(2026, 7, 31))
     expect(series.map((d) => d.date)).toEqual(['2026-07-29', '2026-07-30', '2026-07-31'])
     expect(series.map((d) => d.focusMs)).toEqual([25 * MIN, 0, 0])
   })
 })
 
-describe('série de jours (streak)', () => {
-  it('compte les jours consécutifs avec au moins un focus terminé', () => {
+describe('streak', () => {
+  it('counts consecutive days with at least one completed focus', () => {
     const sessions = [
       focus(at(2026, 7, 29), 25),
       focus(at(2026, 7, 30), 25),
@@ -110,35 +110,35 @@ describe('série de jours (streak)', () => {
     expect(currentStreak(sessions, at(2026, 7, 31, 20))).toBe(3)
   })
 
-  it('ne casse pas la série tant que la journée en cours n’est pas finie', () => {
+  it('does not break the streak while today is not over', () => {
     const sessions = [focus(at(2026, 7, 29), 25), focus(at(2026, 7, 30), 25)]
-    // Le 31 au matin, rien n'a encore été fait : la série d'hier tient toujours.
+    // On the morning of the 31st nothing is done yet: yesterday's streak holds.
     expect(currentStreak(sessions, at(2026, 7, 31, 9))).toBe(2)
   })
 
-  it('retombe à zéro après deux jours sans rien', () => {
+  it('falls back to zero after two empty days', () => {
     const sessions = [focus(at(2026, 7, 28), 25)]
     expect(currentStreak(sessions, at(2026, 7, 31))).toBe(0)
   })
 
-  it('ignore les focus annulés', () => {
+  it('ignores voided focus sessions', () => {
     const sessions = [focus(at(2026, 7, 31), 10, { outcome: 'voided' })]
     expect(currentStreak(sessions, at(2026, 7, 31, 20))).toBe(0)
   })
 })
 
-describe('répartitions', () => {
-  it('classe par tag, du plus travaillé au moins travaillé', () => {
+describe('distributions', () => {
+  it('ranks tags from most worked to least', () => {
     const rows = byTag([
-      focus(at(2026, 7, 31), 25, { tag: 'perso' }),
-      focus(at(2026, 7, 31, 12), 50, { tag: 'boulot' }),
-      focus(at(2026, 7, 31, 14), 25, { tag: 'boulot' }),
+      focus(at(2026, 7, 31), 25, { tag: 'personal' }),
+      focus(at(2026, 7, 31, 12), 50, { tag: 'work' }),
+      focus(at(2026, 7, 31, 14), 25, { tag: 'work' }),
     ])
-    expect(rows.map((r) => r.key)).toEqual(['boulot', 'perso'])
+    expect(rows.map((r) => r.key)).toEqual(['work', 'personal'])
     expect(rows[0]?.focusMs).toBe(75 * MIN)
   })
 
-  it('répartit sur 24 heures locales', () => {
+  it('spreads across 24 local hours', () => {
     const hours = byHour([focus(at(2026, 7, 31, 9), 25), focus(at(2026, 7, 31, 9), 25)])
     expect(hours).toHaveLength(24)
     expect(hours[9]).toBe(50 * MIN)
@@ -148,7 +148,7 @@ describe('répartitions', () => {
 
 const task = (over: Partial<Task>): Task => ({
   id: 't1',
-  title: 'Tâche',
+  title: 'Task',
   notes: null,
   tag: null,
   estimatedPomodoros: 4,
@@ -160,14 +160,14 @@ const task = (over: Partial<Task>): Task => ({
   ...over,
 })
 
-describe('précision d’estimation', () => {
-  it('révèle la sous-estimation', () => {
+describe('estimation accuracy', () => {
+  it('reveals underestimation', () => {
     const { rows, overall } = estimationAccuracy([task({})])
     expect(rows[0]?.ratio).toBe(1.5)
     expect(overall).toBe(1.5)
   })
 
-  it('ignore les tâches non terminées', () => {
+  it('ignores unfinished tasks', () => {
     const { rows, overall } = estimationAccuracy([task({ status: 'active' })])
     expect(rows).toHaveLength(0)
     expect(overall).toBeNull()

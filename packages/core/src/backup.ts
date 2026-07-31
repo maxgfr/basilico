@@ -79,9 +79,8 @@ export function createBackup(
 export type ParseResult = { ok: true; backup: Backup } | { ok: false; error: string }
 
 /**
- * Lit un fichier de sauvegarde. Ne jette jamais et ne remplace jamais
- * silencieusement des données : un import raté doit pouvoir être expliqué à
- * l'utilisateur, pas absorbé.
+ * Reads a backup file. Never throws and never silently replaces data: a failed
+ * import must be explainable to the user, not swallowed.
  */
 export function parseBackup(input: unknown): ParseResult {
   let data = input
@@ -173,12 +172,12 @@ export function toCsv(sessions: readonly SessionRecord[]): string {
 }
 
 /**
- * Export au format Open Pomodoro (`open-pomodoro/go-openpomodoro`) : une
- * collection `pomodoros` dont chaque entrée porte `start_time` en RFC 3339,
- * `duration` en minutes entières, `description` et `tags`.
+ * Export in the Open Pomodoro format (`open-pomodoro/go-openpomodoro`): a
+ * `pomodoros` collection whose entries carry `start_time` as RFC 3339,
+ * `duration` in whole minutes, `description` and `tags`.
  *
- * Seuls les focus réellement terminés sont exportés : le format ne décrit que
- * des pomodoros faits, il n'a pas de notion de session annulée ni de pause.
+ * Only genuinely completed focus sessions are exported: the format describes
+ * pomodoros that happened, it has no notion of a voided session or a break.
  */
 export function toOpenPomodoro(
   sessions: readonly SessionRecord[],

@@ -1,9 +1,8 @@
 /**
- * Remplaçant du module virtuel `virtual:pwa-register` sous Vitest.
+ * Stand-in for the `virtual:pwa-register` virtual module under Vitest.
  *
- * Le module est fabriqué par vite-plugin-pwa au moment du build ; en test il
- * n'existe pas, et enregistrer un service worker n'aurait de toute façon aucun
- * sens dans jsdom.
+ * The module is produced by vite-plugin-pwa at build time; in tests it does not
+ * exist, and registering a service worker would make no sense in jsdom anyway.
  */
 export function registerSW(): (reload?: boolean) => Promise<void> {
   return async () => {}

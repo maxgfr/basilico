@@ -39,7 +39,7 @@ export function TimerScreen() {
   const value = countingUp ? elapsed : remaining
   const display = renderTime(settings.display, value, timer.plannedMs, countingUp)
 
-  // Un rattrapage : la session s'est terminée pendant que l'onglet dormait.
+  // A catch-up: the session ended while the tab was asleep.
   const missed = lastEnded && lastEnded.lateByMs > 60_000 ? lastEnded : null
 
   return (
@@ -80,7 +80,7 @@ export function TimerScreen() {
         </div>
       </TimerRing>
 
-      {/* Les changements d'état sont annoncés, pas chaque seconde qui passe. */}
+      {/* State changes are announced, not every passing second. */}
       <p aria-live="polite" className="sr-only">
         {MODE_LABEL[timer.mode]} — {statusLabel(timer.status)}
       </p>

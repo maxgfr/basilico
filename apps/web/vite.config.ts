@@ -4,9 +4,9 @@ import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
 
-// Le site est publié sur https://maxgfr.github.io/basilico/ : le `base` doit valoir
-// '/basilico/' en CI et '/' partout ailleurs, sinon `vite dev`, `vite preview` et
-// Vitest travaillent sur des chemins qui n'existent pas en local.
+// The site is published at https://maxgfr.github.io/basilico/: `base` must be
+// '/basilico/' in CI and '/' everywhere else, otherwise `vite dev`,
+// `vite preview` and Vitest work against paths that don't exist locally.
 const base = process.env.GITHUB_ACTIONS ? '/basilico/' : '/'
 
 export default defineConfig({
@@ -18,15 +18,15 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg', 'icons/apple-touch-icon.png'],
       workbox: {
-        // Nom versionné et purge des anciens : l'origine `maxgfr.github.io` est
-        // partagée avec les autres projets Pages du compte.
+        // Versioned name and old-cache purge: the `maxgfr.github.io` origin is
+        // shared with the account's other Pages projects.
         cacheId: 'basilico-v1',
         cleanupOutdatedCaches: true,
         globPatterns: ['**/*.{js,css,html,svg,png,webmanifest}'],
       },
       manifest: {
-        // Toutes les URL sont relatives au manifeste : un `start_url` absolu
-        // ouvrirait maxgfr.github.io au lieu de basilico une fois l'app installée.
+        // Every URL is relative to the manifest: an absolute `start_url` would
+        // open maxgfr.github.io instead of basilico once the app is installed.
         id: '/basilico/',
         name: 'basilico — focus timer',
         short_name: 'basilico',
@@ -55,13 +55,13 @@ export default defineConfig({
   ],
   test: {
     alias: {
-      // Module virtuel fabriqué au build par vite-plugin-pwa : introuvable en test.
+      // Virtual module produced at build time by vite-plugin-pwa: absent in tests.
       'virtual:pwa-register': new URL('./src/test/pwa-register-stub.ts', import.meta.url).pathname,
     },
     environment: 'jsdom',
     globals: true,
-    // Les specs Playwright vivent dans e2e/ et n'ont rien à faire ici : Vitest 4
-    // a resserré ses exclusions par défaut et les ramasserait sinon.
+    // Playwright specs live in e2e/ and have no business here: Vitest 4 tightened
+    // its default exclusions and would otherwise pick them up.
     exclude: ['node_modules/**', 'dist/**', 'e2e/**'],
     setupFiles: ['./src/test/setup.ts'],
     coverage: {

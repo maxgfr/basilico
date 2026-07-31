@@ -3,7 +3,7 @@ import { formatDuration } from '../../lib/format'
 
 const WEEKDAY = ['M', 'T', 'W', 'T', 'F', 'S', 'S']
 
-/** Barres journalières. Rien d'autre que des rectangles : aucune bibliothèque requise. */
+/** Daily bars. Nothing but rectangles: no library required. */
 export function DailyBars({ data }: { data: DayBucket[] }) {
   const max = Math.max(...data.map((d) => d.focusMs), 1)
 
@@ -36,7 +36,7 @@ export function DailyBars({ data }: { data: DayBucket[] }) {
 
 const LEVELS = ['bg-ink-800', 'bg-focus/25', 'bg-focus/50', 'bg-focus/75', 'bg-focus']
 
-/** Palier de couleur d'une case. Le premier palier reste distinct du vide. */
+/** Colour band of a cell. The first band stays distinct from empty. */
 function levelOf(ms: number, max: number): number {
   if (ms <= 0) return 0
   const ratio = ms / max
@@ -47,14 +47,14 @@ function levelOf(ms: number, max: number): number {
 }
 
 /**
- * Heatmap façon graphe de contributions : 53 colonnes de 7 cases. C'est la vue
- * qu'aucun minuteur open source ne propose, et celle qui donne le plus envie de
- * ne pas casser sa série.
+ * Contribution-graph-style heatmap: 53 columns of 7 cells. The view no
+ * open-source timer offers, and the one that makes you least want to break
+ * your streak.
  */
 export function Heatmap({ data }: { data: DayBucket[] }) {
   const max = Math.max(...data.map((d) => d.focusMs), 1)
 
-  // On commence la grille au lundi précédant le premier jour affiché.
+  // The grid starts on the Monday preceding the first day shown.
   const first = data[0]
   if (!first) return null
   const offset = (new Date(first.ts).getDay() + 6) % 7
@@ -88,7 +88,7 @@ export function Heatmap({ data }: { data: DayBucket[] }) {
   )
 }
 
-/** Profil horaire : quand travailles-tu vraiment. */
+/** Hourly profile: when you actually work. */
 export function HourProfile({ hours }: { hours: number[] }) {
   const max = Math.max(...hours, 1)
   return (

@@ -1,9 +1,9 @@
 /**
- * Génère les icônes PNG de la PWA à partir d'un SVG, via Chromium.
+ * Generates the PWA's PNG icons from an SVG, through Chromium.
  *
- * Script ponctuel : on lance `node scripts/make-icons.mjs` quand l'identité change,
- * et on versionne les PNG produits. Aucune dépendance de build supplémentaire, et
- * pas d'outil de conversion à installer.
+ * One-off script: run `node scripts/make-icons.mjs` when the identity changes and
+ * commit the resulting PNGs. No extra build dependency, and no conversion tool
+ * to install.
  */
 import { chromium } from '@playwright/test'
 import { mkdir, writeFile } from 'node:fs/promises'
@@ -12,7 +12,7 @@ const BG = '#0b0f0e'
 const TRACK = '#1e2b26'
 const RING = '#5cc79a'
 
-/** `inset` laisse la marge de sécurité qu'exige une icône maskable (zone de rognage). */
+/** `inset` leaves the safe margin a maskable icon requires (crop zone). */
 const icon = (inset) => `
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
   <rect width="512" height="512" fill="${BG}"/>

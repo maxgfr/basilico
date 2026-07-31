@@ -5,8 +5,8 @@ const DARK = '#0b0f0e'
 const LIGHT = '#f7faf8'
 
 /**
- * Pose `data-theme` sur `<html>`, ce qui suffit à basculer toute l'interface :
- * la rampe de tokens est redéfinie en CSS, les composants n'ont pas de variante.
+ * Sets `data-theme` on `<html>`, which is enough to flip the whole interface:
+ * the token ramp is redefined in CSS, components need no variant of their own.
  */
 export function useTheme(): void {
   const theme = useApp((s) => s.settings.theme)
@@ -23,7 +23,7 @@ export function useTheme(): void {
     }
 
     apply()
-    // Suivre la préférence système en direct n'a de sens qu'en mode « système ».
+    // Following the system preference live only makes sense in "auto" mode.
     if (theme !== 'system') return
     media.addEventListener('change', apply)
     return () => media.removeEventListener('change', apply)

@@ -43,8 +43,8 @@ export function removeTask(tasks: readonly Task[], id: string): Task[] {
 }
 
 /**
- * Incrémente le compteur de pomodoros d'une tâche. Appelé à la **fin** d'un focus
- * terminé, jamais à son démarrage : un focus commencé n'est pas un focus fait.
+ * Increments a task's pomodoro counter. Called at the **end** of a completed
+ * focus session, never at its start: a focus begun is not a focus done.
  */
 export function creditPomodoro(tasks: readonly Task[], id: string | null): Task[] {
   if (id === null) return [...tasks]
@@ -53,7 +53,7 @@ export function creditPomodoro(tasks: readonly Task[], id: string | null): Task[
   )
 }
 
-/** Réordonne par glisser-déposer : déplace `id` à l'index `to` parmi les tâches actives. */
+/** Reorders: moves `id` to index `to` among the active tasks. */
 export function reorderTasks(tasks: readonly Task[], id: string, to: number): Task[] {
   const ordered = tasks.toSorted((a, b) => a.order - b.order)
   const from = ordered.findIndex((t) => t.id === id)

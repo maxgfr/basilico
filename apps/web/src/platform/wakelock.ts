@@ -1,10 +1,10 @@
 /**
- * Wake Lock : empêche l'écran de s'éteindre pendant un focus.
+ * Wake Lock: keeps the screen from turning off during a focus session.
  *
- * Le verrou est libéré automatiquement dès que la page devient masquée, et il
- * n'est **jamais** restauré tout seul : il faut le redemander à chaque retour de
- * visibilité. Un échec (batterie faible, mode économie) est normal et ne doit
- * jamais bloquer le minuteur.
+ * The lock is released automatically as soon as the page becomes hidden, and it
+ * is **never** restored on its own: it must be requested again on every return
+ * to visibility. A failure (low battery, power-saving mode) is normal and must
+ * never block the timer.
  */
 export function createWakeLock() {
   let sentinel: WakeLockSentinel | null = null
@@ -29,7 +29,7 @@ export function createWakeLock() {
     try {
       await current?.release()
     } catch {
-      // Déjà relâché.
+      // Already released.
     }
   }
 

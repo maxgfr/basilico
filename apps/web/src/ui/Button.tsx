@@ -9,7 +9,7 @@ const BASE =
   'disabled:cursor-not-allowed disabled:opacity-40 motion-reduce:transition-none'
 
 const VARIANTS: Record<Variant, string> = {
-  // Un `hover:bg-white` s'inverserait en thème clair : l'opacité, elle, marche des deux côtés.
+  // A `hover:bg-white` would invert in the light theme; opacity works both ways.
   primary: 'bg-ink-100 text-ink-950 hover:opacity-90 active:opacity-80',
   secondary: 'bg-ink-800 text-ink-100 hover:bg-ink-600/60 active:bg-ink-800',
   ghost: 'text-ink-300 hover:bg-ink-900 hover:text-ink-100 active:bg-ink-800',

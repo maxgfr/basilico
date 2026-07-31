@@ -2,17 +2,17 @@ import { defineConfig } from 'vite'
 import { resolve } from 'node:path'
 
 /**
- * Build séparé du content script.
+ * Separate build for the content script.
  *
- * Un content script MV3 est injecté comme script classique, pas comme module :
- * il ne peut ni importer, ni charger un chunk partagé. Le build principal, lui,
- * a tout intérêt à partager `protocol.ts` entre le service worker et le popup.
- * D'où deux configurations plutôt qu'une seule qui conviendrait mal aux deux.
+ * An MV3 content script is injected as a classic script, not a module: it can
+ * neither import nor load a shared chunk. The main build, on the other hand,
+ * benefits from sharing `protocol.ts` between the service worker and the popup.
+ * Hence two configurations rather than one that would suit neither.
  */
 export default defineConfig({
   build: {
     outDir: 'dist',
-    // Le build principal est déjà passé : on ne vide surtout pas le dossier.
+    // The main build already ran: on no account empty the directory.
     emptyOutDir: false,
     target: 'chrome116',
     rolldownOptions: {

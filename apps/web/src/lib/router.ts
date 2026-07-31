@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react'
 
 /**
- * Routage par hash, volontairement : GitHub Pages ne sait pas réécrire les URL,
- * donc `/basilico/stats` renverrait un 404 au rechargement. Le hash marche à
- * l'identique en local, sous `/basilico/`, et dans la fenêtre PWA installée.
+ * Hash routing, on purpose: GitHub Pages cannot rewrite URLs, so `/basilico/stats`
+ * would 404 on reload. Hashes behave identically locally, under `/basilico/`, and
+ * inside the installed PWA window.
  */
 export const ROUTES = {
   timer: { hash: '#/', label: 'Timer' },

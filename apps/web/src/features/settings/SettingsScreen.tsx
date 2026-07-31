@@ -197,15 +197,6 @@ export function SettingsScreen() {
             { value: 'hidden', label: 'Hidden' },
           ]}
         />
-        <Choice
-          label="Clock format"
-          value={String(settings.hourFormat) as '12' | '24'}
-          onChange={(value) => update({ hourFormat: value === '12' ? 12 : 24 })}
-          options={[
-            { value: '24', label: '24h' },
-            { value: '12', label: '12h' },
-          ]}
-        />
       </Section>
 
       <Section
@@ -424,8 +415,8 @@ function SectionNav() {
 }
 
 /**
- * Résumé du cycle complet. Quatre nombres pris séparément ne disent pas ce qu'ils
- * produisent ensemble ; cette phrase, si.
+ * A summary of the full cycle. Four numbers taken separately don't tell you what
+ * they add up to; this sentence does.
  */
 function CycleSummary({ settings }: { settings: Settings }) {
   const { focus, shortBreak, longBreak } = settings.durations

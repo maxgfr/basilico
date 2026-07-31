@@ -11,11 +11,11 @@ const ALARM = 'basilico-phase-end'
 const OFFSCREEN = 'offscreen.html'
 
 /**
- * Service worker de l'extension.
+ * The extension's service worker.
  *
- * Il ne compte pas le temps : `chrome.alarms` le fait pour lui, et survit à
- * l'arrêt du service worker — c'est précisément ce qu'un `setTimeout` dans une
- * page ne sait pas faire quand l'onglet est fermé.
+ * It does not count time: `chrome.alarms` does that for it, and survives the
+ * service worker shutting down — precisely what a page's `setTimeout` cannot do
+ * once the tab is closed.
  */
 
 async function readPhase(): Promise<Phase | null> {
@@ -41,7 +41,7 @@ async function schedule(phase: Phase): Promise<void> {
     await paintBadge(null)
     return
   }
-  // `when` accepte une échéance absolue : aucune dérive à rattraper.
+  // `when` takes an absolute deadline: no drift to catch up on.
   chrome.alarms.create(ALARM, { when: phase.endsAt })
   await paintBadge(phase)
 }
@@ -53,8 +53,8 @@ async function stop(): Promise<void> {
 }
 
 /**
- * Un service worker MV3 ne peut pas jouer de son : l'API Web Audio n'existe pas
- * dans son contexte. Le document offscreen est le seul moyen prévu pour ça.
+ * An MV3 service worker cannot play sound: the Web Audio API does not exist in
+ * its context. The offscreen document is the sanctioned way around that.
  */
 async function playAlarm(): Promise<void> {
   try {
@@ -68,7 +68,7 @@ async function playAlarm(): Promise<void> {
     }
     await chrome.runtime.sendMessage({ target: 'offscreen', type: 'play' })
   } catch {
-    // Sans son, la notification suffit : on ne casse rien pour autant.
+    // Without sound the notification still does the job: nothing is broken.
   }
 }
 
@@ -93,14 +93,14 @@ chrome.alarms.onAlarm.addListener((alarm) => {
   })()
 })
 
-// Ouvrir l'app quand on clique la notification : c'est là que la session vit.
+// Clicking the notification opens the app: that is where the session lives.
 chrome.notifications.onClicked.addListener((id) => {
   if (!id.startsWith(ALARM)) return
   void chrome.tabs.create({ url: 'https://maxgfr.github.io/basilico/' })
   chrome.notifications.clear(id)
 })
 
-// Messages venus de la page, relayés par le content script.
+// Messages from the page, relayed by the content script.
 chrome.runtime.onMessage.addListener(
   (message: AppMessage & { target?: string }, _sender, reply) => {
     if (message.target === 'offscreen') return
@@ -122,7 +122,7 @@ chrome.runtime.onMessage.addListener(
   },
 )
 
-// Le badge se rafraîchit à l'ouverture du popup, pas en continu : réveiller le
-// service worker toutes les minutes pour une pastille coûterait plus que ça ne vaut.
+// The badge refreshes when the popup opens, not continuously: waking the service
+// worker every minute for a badge would cost more than it is worth.
 chrome.runtime.onStartup.addListener(() => void stop())
 chrome.runtime.onInstalled.addListener(() => void stop())

@@ -2,14 +2,14 @@ import type { InterruptionKind, Mode, SessionOutcome, SessionRecord, TimerState 
 import { plannedMsFor, type Settings } from './settings'
 
 /**
- * Au-delà de ce retard, on ne démarre plus la phase suivante automatiquement :
- * l'onglet était fermé ou gelé, et enchaîner une pause commencée il y a une heure
- * n'a aucun sens. L'app affiche « terminée il y a X » et laisse la main.
+ * Past this much lateness we stop auto-starting the next phase: the tab was
+ * closed or frozen, and picking up a break that was due an hour ago makes no
+ * sense. The app shows "ended X ago" and hands control back.
  */
 export const CATCH_UP_GRACE_MS = 60_000
 
 export type TimerContext = {
-  /** Instant courant (ms epoch). Toujours injecté : le noyau ne lit jamais l'horloge. */
+  /** Current instant (epoch ms). Always injected: the core never reads the clock. */
   now: number
   settings: Settings
   uid: () => string
@@ -34,37 +34,38 @@ export function createTimerState(settings: Settings): TimerState {
     focusSinceLongBreak: 0,
     interruptions: { internal: 0, external: 0 },
     taskId: null,
+    tag: null,
     intention: null,
   }
 }
 
-/** En flowtime, un focus n'a pas d'échéance : il tourne jusqu'à ce qu'on l'arrête. */
+/** In flowtime a focus session has no deadline: it runs until you stop it. */
 function hasDeadline(mode: Mode, settings: Settings): boolean {
   return !(settings.mode === 'flowtime' && mode === 'focus')
 }
 
-/** Horloge effective : figée à l'instant de la pause tant que le minuteur est en pause. */
+/** Effective clock: frozen at the moment of pausing while the timer is paused. */
 function clockOf(state: TimerState, now: number): number {
   return state.status === 'paused' && state.pausedAt !== null ? state.pausedAt : now
 }
 
 /**
- * Temps restant en ms, négatif en overtime. `null` quand la phase n'a pas
- * d'échéance (focus en flowtime) — dans ce cas c'est `elapsedMs` qui fait foi.
+ * Remaining time in ms, negative in overtime. `null` when the phase has no
+ * deadline (focus in flowtime) — `elapsedMs` is what counts then.
  */
 export function remainingMs(state: TimerState, now: number): number | null {
   if (state.endsAt === null) return state.status === 'idle' ? state.plannedMs : null
   return state.endsAt - clockOf(state, now)
 }
 
-/** Temps réellement écoulé sur la phase, hors pauses. Jamais négatif. */
+/** Time actually elapsed on the phase, excluding pauses. Never negative. */
 export function elapsedMs(state: TimerState, now: number): number {
   if (state.startedAt === null) return 0
   const raw = clockOf(state, now) - state.startedAt - state.pausedTotalMs
   return raw > 0 ? raw : 0
 }
 
-/** Avancement de 0 à 1, plafonné à 1 même en overtime. */
+/** Progress from 0 to 1, capped at 1 even in overtime. */
 export function progress(state: TimerState, now: number): number {
   if (state.plannedMs <= 0) return 0
   const done = elapsedMs(state, now) / state.plannedMs
@@ -72,17 +73,18 @@ export function progress(state: TimerState, now: number): number {
 }
 
 /**
- * Mode qui suivra, connaissant le nombre de focus déjà faits depuis la longue pause.
+ * Which mode comes next, given how many focus sessions have happened since the
+ * last long break.
  *
- * Le seuil est un `>=` et non un modulo : un focus annulé ne compte pas, et avec
- * un modulo la longue pause due sauterait purement et simplement au tour suivant.
+ * The threshold is a `>=` rather than a modulo: a voided focus doesn't count,
+ * and with a modulo the long break that was due would simply be skipped.
  */
 export function nextMode(mode: Mode, focusSinceLongBreak: number, settings: Settings): Mode {
   if (mode !== 'focus') return 'focus'
   return focusSinceLongBreak >= settings.longBreakEvery ? 'longBreak' : 'shortBreak'
 }
 
-/** Durée de pause proposée en flowtime, proportionnelle au temps travaillé. */
+/** Break length proposed in flowtime, proportional to the time worked. */
 export function flowtimeBreakMs(workedMs: number, settings: Settings): number {
   return Math.max(60_000, Math.round(workedMs * settings.flowtimeBreakRatio))
 }
@@ -90,13 +92,18 @@ export function flowtimeBreakMs(workedMs: number, settings: Settings): number {
 export function startPhase(
   state: TimerState,
   ctx: TimerContext,
-  options: { taskId?: string | null; intention?: string | null; at?: number } = {},
+  options: {
+    taskId?: string | null
+    tag?: string | null
+    intention?: string | null
+    at?: number
+  } = {},
 ): TimerState {
   const at = options.at ?? ctx.now
-  // On démarre la durée déjà portée par l'état, jamais une durée recalculée depuis
-  // les réglages : sinon la pause proportionnelle du mode flowtime serait écrasée
-  // par la durée de pause courte générique. `applySettings` est le seul endroit
-  // qui reprend les durées des réglages.
+  // We start the duration already carried by the state, never one recomputed
+  // from the settings: otherwise flowtime's proportional break would be
+  // overwritten by the generic short-break duration. `applySettings` is the only
+  // place that picks durations back up from the settings.
   return {
     ...state,
     status: 'running',
@@ -106,6 +113,7 @@ export function startPhase(
     pausedTotalMs: 0,
     interruptions: { internal: 0, external: 0 },
     taskId: options.taskId !== undefined ? options.taskId : state.taskId,
+    tag: options.tag !== undefined ? options.tag : state.tag,
     intention: options.intention !== undefined ? options.intention : state.intention,
   }
 }
@@ -117,8 +125,8 @@ export function pause(state: TimerState, ctx: TimerContext): TimerState {
 
 export function resume(state: TimerState, ctx: TimerContext): TimerState {
   if (state.status !== 'paused' || state.pausedAt === null) return state
-  // Le temps passé en pause décale l'échéance d'autant : une pause de 3 minutes
-  // rend bien 3 minutes de travail, elle ne les vole pas.
+  // Time spent paused pushes the deadline back by the same amount: a 3-minute
+  // pause gives 3 minutes of work back, it doesn't steal them.
   const pausedFor = Math.max(0, ctx.now - state.pausedAt)
   return {
     ...state,
@@ -129,7 +137,7 @@ export function resume(state: TimerState, ctx: TimerContext): TimerState {
   }
 }
 
-/** Remet la phase courante à zéro sans rien enregistrer. */
+/** Resets the current phase without recording anything. */
 export function reset(state: TimerState, ctx: TimerContext): TimerState {
   return {
     ...state,
@@ -145,8 +153,8 @@ export function reset(state: TimerState, ctx: TimerContext): TimerState {
 }
 
 /**
- * Reprend les durées des réglages. Sans effet sur une phase en cours : changer
- * « focus = 30 min » ne doit pas rallonger le focus qui tourne déjà.
+ * Picks durations back up from the settings. No effect on a running phase:
+ * changing "focus = 30 min" must not stretch the focus already under way.
  */
 export function applySettings(state: TimerState, settings: Settings): TimerState {
   if (state.status !== 'idle') return state
@@ -179,7 +187,9 @@ function buildRecord(
     overtimeMs: overtime,
     outcome,
     taskId: state.taskId,
-    tag: null,
+    // The tag is frozen at start time rather than looked up later: renaming a
+    // task's tag must not silently rewrite months of history.
+    tag: state.tag,
     interruptions: { ...state.interruptions },
     intention: state.intention,
     note: null,
@@ -188,11 +198,11 @@ function buildRecord(
 }
 
 /**
- * Clôt la phase courante et prépare la suivante.
+ * Closes the current phase and prepares the next one.
  *
- * `endedAt` est l'heure réelle de fin, qui n'est pas forcément `now` : si l'onglet
- * était gelé, la session s'est terminée à son échéance, pas au moment où on s'en
- * aperçoit. C'est toute la logique de rattrapage.
+ * `endedAt` is the real end time, which is not necessarily `now`: if the tab was
+ * frozen, the session ended at its deadline, not when we noticed. That's the
+ * whole catch-up logic.
  */
 function closePhase(
   state: TimerState,
@@ -231,8 +241,8 @@ function closePhase(
 
   const autoStart = next === 'focus' ? ctx.settings.autoStartFocus : ctx.settings.autoStartBreaks
   const lateBy = Math.max(0, ctx.now - endedAt)
-  // On n'enchaîne que si la fin vient d'avoir lieu : reprendre une pause due il y a
-  // une heure produirait un minuteur déjà terminé au retour de l'utilisateur.
+  // We only chain when the end just happened: resuming a break that was due an
+  // hour ago would hand the user an already-finished timer.
   if (autoStart && lateBy <= CATCH_UP_GRACE_MS) {
     const started = startPhase(idle, ctx, { at: endedAt, intention: null })
     return { state: started, events: [...events, { type: 'phase-started', mode: next }] }
@@ -241,16 +251,16 @@ function closePhase(
   return { state: idle, events }
 }
 
-/** Termine la phase courante maintenant : passer (`skipped`) ou annuler (`voided`). */
+/** Ends the current phase now: skip it (`skipped`) or void it (`voided`). */
 export function finish(state: TimerState, ctx: TimerContext, outcome: SessionOutcome): TimerResult {
   if (state.status === 'idle') return { state, events: [] }
   return closePhase(state, ctx, ctx.now, outcome)
 }
 
 /**
- * Réconcilie l'état avec l'horloge. À appeler à chaque tick, au retour de
- * `visibilitychange`, au `pageshow` et au démarrage : c'est le seul endroit qui
- * décide qu'une session est terminée.
+ * Reconciles the state with the clock. Call it on every tick, when
+ * `visibilitychange` brings the page back, on `pageshow` and at startup: this is
+ * the only place that decides a session is over.
  */
 export function advance(state: TimerState, ctx: TimerContext): TimerResult {
   if (state.status !== 'running' && state.status !== 'overtime') return { state, events: [] }

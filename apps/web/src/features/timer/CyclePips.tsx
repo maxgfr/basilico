@@ -1,9 +1,9 @@
 type Props = { done: number; total: number }
 
 /**
- * Position dans le cycle, en pastilles plutôt qu'en « 2/4 » : lisible d'un coup
- * d'œil sans lire de chiffre. Le libellé textuel reste disponible aux lecteurs
- * d'écran, la couleur seule ne porte jamais l'information.
+ * Position in the cycle, as dots rather than "2/4": readable at a glance without
+ * reading a number. The textual label stays available to screen readers, and
+ * colour alone never carries the information.
  */
 export function CyclePips({ done, total }: Props) {
   const filled = Math.min(done, total)

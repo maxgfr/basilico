@@ -9,10 +9,11 @@ permissions:
   contents: read
   pages: write
   id-token: write
-  # `deploy-pages` v4+ résout l'artefact via l'API Actions : sans ce droit, 403 silencieux.
+  # `deploy-pages` v4+ resolves the artefact through the Actions API: without this
+  # permission you get a silent 403.
   actions: read
 
-# Un déploiement de production ne s'annule jamais en cours de route.
+# A production deployment is never cancelled midway.
 concurrency:
   group: pages
   cancel-in-progress: false
@@ -35,7 +36,7 @@ jobs:
           path: apps/web/dist
 
   deploy:
-    # Sans `needs`, le job de déploiement attendrait un artefact qui n'existe pas encore.
+    # Without `needs`, the deploy job would wait for an artefact that never comes.
     needs: build
     runs-on: ubuntu-latest
     environment:

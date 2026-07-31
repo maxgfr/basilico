@@ -164,11 +164,11 @@ export function Choice<T extends string>({
 }
 
 /**
- * Choix présenté en cartes, chacune portant sa propre explication.
+ * A choice rendered as cards, each carrying its own explanation.
  *
- * Un segmented control doublé d'une infobulle qui change au clic oblige à
- * sélectionner une option pour découvrir ce qu'elle fait. Ici les trois
- * descriptions sont visibles en même temps : on compare avant de choisir.
+ * A segmented control paired with a hint that changes on click forces you to
+ * select an option to find out what it does. Here all three descriptions are
+ * visible at once: you compare before you choose.
  */
 export function OptionCards<T extends string>({
   value,
@@ -225,7 +225,7 @@ const PILL: Record<PillTone, string> = {
   muted: 'bg-ink-800 text-ink-300',
 }
 
-/** État d'une permission ou d'une capacité, en un coup d'œil. */
+/** State of a permission or capability, at a glance. */
 export function StatusPill({ tone, children }: { tone: PillTone; children: ReactNode }) {
   return (
     <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${PILL[tone]}`}>{children}</span>

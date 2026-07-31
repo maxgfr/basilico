@@ -3,12 +3,12 @@ import { z } from 'zod'
 export const SETTINGS_VERSION = 1
 
 /**
- * Un preset ne fixe que les durées : tout le reste des réglages reste celui de
- * l'utilisateur. 25/5 est le canon Cirillo ; 50/10 et 52/17 sont les deux
- * rythmes que réclament le plus les gens pour qui 25 minutes coupe le flow.
+ * A preset only sets the durations: everything else stays as the user left it.
+ * 25/5 is the Cirillo canon; 50/10 and 52/17 are the two rhythms most asked for
+ * by people whose flow a 25-minute stop breaks.
  *
- * Par défaut le cycle tourne en boucle : les pauses **et** les focus
- * s'enchaînent seuls, on ne represse jamais « démarrer ».
+ * By default the cycle loops: breaks **and** focus sessions start themselves, so
+ * you never press "start" again.
  */
 export const DURATION_PRESETS = {
   classic: { label: '25 / 5', focus: 25, shortBreak: 5, longBreak: 15 },
@@ -29,11 +29,11 @@ export const settingsSchema = z.object({
   autoStartBreaks: z.boolean(),
   autoStartFocus: z.boolean(),
   /**
-   * `classic` s'arrête à zéro. `overtime` continue de compter au-delà.
-   * `flowtime` démarre sans échéance et propose une pause proportionnelle.
+   * `classic` stops at zero. `overtime` keeps counting past it.
+   * `flowtime` starts with no deadline and offers a proportional break.
    */
   mode: z.enum(['classic', 'overtime', 'flowtime']),
-  /** Ratio temps travaillé → pause proposée en flowtime (1/5 par défaut). */
+  /** Worked-time to proposed-break ratio in flowtime (1/5 by default). */
   flowtimeBreakRatio: z.number().min(0.05).max(1),
   display: z.enum(['exact', 'approximate', 'percent', 'hidden']),
   dailyGoalMinutes: z.number().int().min(0).max(1440),
@@ -45,14 +45,12 @@ export const settingsSchema = z.object({
   }),
   notifications: z.object({
     enabled: z.boolean(),
-    /** Alertes 60 s avant la fin d'un focus et 30 s avant la fin d'une pause. */
+    /** Heads-up 60 s before a focus ends and 30 s before a break does. */
     staged: z.boolean(),
   }),
   wakeLock: z.boolean(),
   pip: z.boolean(),
   theme: z.enum(['system', 'light', 'dark']),
-  weekStartsOn: z.union([z.literal(0), z.literal(1)]),
-  hourFormat: z.union([z.literal(12), z.literal(24)]),
 })
 
 export type Settings = z.infer<typeof settingsSchema>
@@ -72,8 +70,6 @@ export const defaultSettings: Settings = {
   wakeLock: false,
   pip: false,
   theme: 'system',
-  weekStartsOn: 1,
-  hourFormat: 24,
 }
 
 type Plain = Record<string, unknown>
@@ -82,11 +78,11 @@ const isPlainObject = (value: unknown): value is Plain =>
   typeof value === 'object' && value !== null && !Array.isArray(value)
 
 /**
- * Fusion profonde des réglages persistés dans les défauts.
+ * Deep-merges stored settings into the defaults.
  *
- * Indispensable : une fusion superficielle ferait disparaître tout champ ajouté
- * plus tard dans un objet imbriqué (`sound`, `notifications`) pour les
- * utilisateurs existants — ils garderaient à vie une version amputée.
+ * Essential: a shallow merge would drop any field added later inside a nested
+ * object (`sound`, `notifications`) for existing users — they would keep a
+ * truncated version forever.
  */
 export function mergeSettings<T>(base: T, patch: unknown): T {
   if (!isPlainObject(patch) || !isPlainObject(base)) return base
@@ -100,15 +96,15 @@ export function mergeSettings<T>(base: T, patch: unknown): T {
   return out as T
 }
 
-/** Migrations successives, appliquées dans l'ordre à partir de la version stockée. */
+/** Successive migrations, applied in order from the stored version. */
 const migrations: Record<number, (input: Plain) => Plain> = {
-  // 0 → 1 : première version publiée, rien à transformer.
+  // 0 → 1: first published version, nothing to transform.
   0: (input) => input,
 }
 
 /**
- * Lit des réglages venus du stockage ou d'un import. Ne jette jamais : des
- * réglages illisibles ne doivent pas empêcher l'app de démarrer.
+ * Reads settings coming from storage or an import. Never throws: unreadable
+ * settings must not stop the app from starting.
  */
 export function parseSettings(input: unknown): Settings {
   if (!isPlainObject(input)) return defaultSettings
@@ -131,7 +127,7 @@ export function applyPreset(settings: Settings, preset: PresetName): Settings {
   return { ...settings, durations: { focus, shortBreak, longBreak } }
 }
 
-/** Durée planifiée d'une phase, en millisecondes. */
+/** Planned duration of a phase, in milliseconds. */
 export function plannedMsFor(
   settings: Settings,
   mode: 'focus' | 'shortBreak' | 'longBreak',

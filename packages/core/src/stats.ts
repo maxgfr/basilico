@@ -2,11 +2,11 @@ import { isCountedFocus } from './sessions'
 import type { SessionRecord, Task } from './types'
 
 /**
- * Toutes les agrégations raisonnent en **jours locaux**, calculés via `Date`,
- * ce qui gère les changements d'heure sans arithmétique sur des millisecondes :
- * un jour ne fait pas toujours 24 h.
+ * Every aggregation reasons in **local days**, computed through `Date`, which
+ * handles daylight-saving shifts without millisecond arithmetic: a day is not
+ * always 24 hours long.
  *
- * Une session à cheval sur minuit est comptée le jour où elle a commencé.
+ * A session straddling midnight is counted on the day it started.
  */
 export function startOfDay(ts: number): number {
   const d = new Date(ts)
@@ -20,7 +20,7 @@ export function addDays(ts: number, days: number): number {
   return d.getTime()
 }
 
-/** Clé de jour local au format `YYYY-MM-DD`, stable et triable. */
+/** Local day key as `YYYY-MM-DD`: stable and sortable. */
 export function dayKey(ts: number): string {
   const d = new Date(ts)
   const month = String(d.getMonth() + 1).padStart(2, '0')
@@ -36,7 +36,7 @@ export type Summary = {
   voidedFocus: number
   skipped: number
   interruptions: { internal: number; external: number }
-  /** Focus terminés ÷ focus démarrés, entre 0 et 1. `null` si aucun focus. */
+  /** Completed focus ÷ started focus, between 0 and 1. `null` when there are none. */
   completionRate: number | null
 }
 
@@ -60,9 +60,8 @@ export function summarize(sessions: readonly SessionRecord[]): Summary {
 
     if (s.mode === 'focus') {
       focusStarted++
-      // Le temps d'un focus annulé reste du temps passé : on le compte, mais il
-      // n'ajoute pas de pomodoro. Ne pas le compter donnerait des journées à zéro
-      // alors que la personne a travaillé.
+      // A voided focus is still time spent: we count it, but it adds no
+      // pomodoro. Ignoring it would show empty days for someone who did work.
       summary.focusMs += s.actualMs
       summary.overtimeMs += s.overtimeMs
       if (s.outcome === 'completed') summary.completedFocus++
@@ -78,7 +77,7 @@ export function summarize(sessions: readonly SessionRecord[]): Summary {
 
 export type DayBucket = { date: string; ts: number; focusMs: number; completedFocus: number }
 
-/** Série journalière continue (jours vides inclus) se terminant le jour de `endTs`. */
+/** Continuous daily series (empty days included) ending on the day of `endTs`. */
 export function dailySeries(
   sessions: readonly SessionRecord[],
   days: number,
@@ -111,11 +110,11 @@ export function dailySeries(
 }
 
 /**
- * Série de jours consécutifs avec au moins un focus terminé.
+ * Run of consecutive days with at least one completed focus session.
  *
- * La journée en cours ne casse pas la série tant qu'elle n'est pas finie : on
- * repart d'hier si aujourd'hui est encore vide, sinon l'app afficherait « série
- * rompue » tous les matins.
+ * Today doesn't break the streak until it's over: we start from yesterday when
+ * today is still empty, otherwise the app would announce a broken streak every
+ * single morning.
  */
 export function currentStreak(sessions: readonly SessionRecord[], todayTs: number): number {
   const active = new Set<string>()
@@ -157,7 +156,7 @@ function distribute(
 export const byTask = (sessions: readonly SessionRecord[]) => distribute(sessions, (s) => s.taskId)
 export const byTag = (sessions: readonly SessionRecord[]) => distribute(sessions, (s) => s.tag)
 
-/** Minutes de focus par heure de la journée locale : 24 cases, toujours pleines. */
+/** Focus time per hour of the local day: 24 buckets, always filled. */
 export function byHour(sessions: readonly SessionRecord[]): number[] {
   const hours = Array.from({ length: 24 }, () => 0)
   for (const s of sessions) {
@@ -173,18 +172,18 @@ export type EstimationRow = {
   title: string
   estimated: number
   actual: number
-  /** > 1 : sous-estimé. < 1 : surestimé. */
+  /** > 1: underestimated. < 1: overestimated. */
   ratio: number
 }
 
 /**
- * Précision d'estimation, tâche par tâche : l'objectif III de Cirillo, celui que
- * pratiquement aucun outil ne restitue alors que c'est le seul qui apprend
- * quelque chose sur soi.
+ * Estimation accuracy, task by task: Cirillo's third objective, the one almost
+ * no tool reports back even though it's the only one that teaches you something
+ * about yourself.
  */
 export function estimationAccuracy(tasks: readonly Task[]): {
   rows: EstimationRow[]
-  /** Ratio global, `null` tant qu'aucune tâche terminée n'a de pomodoro. */
+  /** Overall ratio, `null` until a completed task has at least one pomodoro. */
   overall: number | null
 } {
   const rows: EstimationRow[] = []

@@ -125,9 +125,9 @@ function TaskRow({ task, index, count, active, onActivate }: RowProps) {
       <Pomodoros done={task.completedPomodoros} estimated={task.estimatedPomodoros} />
 
       {/*
-        Les actions sont posées par-dessus la ligne plutôt qu'à côté : dans une
-        colonne étroite, les garder dans le flux rognait le titre des tâches à
-        « R... ». Le dégradé raccorde l'incrustation au fond de la ligne.
+        Actions sit on top of the row rather than beside it: in a narrow column,
+        keeping them in the flow clipped task titles down to "R...". The gradient
+        blends the overlay into the row background.
       */}
       <div className="from-ink-900 via-ink-900 absolute inset-y-0 right-0 hidden items-center rounded-r-lg bg-gradient-to-l to-transparent pr-1 pl-8 group-focus-within:flex group-hover:flex">
         <Button
@@ -205,8 +205,8 @@ function AddTaskForm({
         title="Estimated pomodoros"
         className="border-ink-800 bg-ink-900 tabular focus:border-ink-600 h-10 w-12 shrink-0 rounded-lg border px-1 text-center text-sm outline-none"
       />
-      {/* Bouton compact : dans une colonne de 20 rem, « Add » en toutes lettres
-          forçait le formulaire à passer sur deux lignes. */}
+      {/* Compact button: in a 20 rem column, spelling out "Add" pushed the form
+          onto a second line. */}
       <Button
         type="submit"
         variant="secondary"

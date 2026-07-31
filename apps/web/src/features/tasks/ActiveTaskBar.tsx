@@ -2,8 +2,8 @@ import { useApp } from '../../store/app'
 import { Pomodoros } from './Pomodoros'
 
 /**
- * Rappel de ce sur quoi la session en cours est imputée. Sans ça, les statistiques
- * par tâche se remplissent de sessions rattachées à la mauvaise chose.
+ * A reminder of what the running session is attributed to. Without it, per-task
+ * stats fill up with sessions pinned to the wrong thing.
  */
 export function ActiveTaskBar() {
   const activeTaskId = useApp((s) => s.activeTaskId)

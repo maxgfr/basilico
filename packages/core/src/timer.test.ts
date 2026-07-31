@@ -28,7 +28,7 @@ function ctxAt(now: number, overrides: Partial<Settings> = {}): TimerContext {
   }
 }
 
-/** Démarre un focus à T0 avec les réglages donnés. */
+/** Starts a focus session at T0 with the given settings. */
 function running(overrides: Partial<Settings> = {}): TimerState {
   const ctx = ctxAt(T0, overrides)
   return startPhase(createTimerState(ctx.settings), ctx)
@@ -38,34 +38,34 @@ function endedRecords(events: ReturnType<typeof advance>['events']): SessionReco
   return events.flatMap((e) => (e.type === 'session-ended' ? [e.record] : []))
 }
 
-describe('décompte', () => {
-  it('calcule le restant à partir de l’échéance absolue', () => {
+describe('countdown', () => {
+  it('derives the remaining time from the absolute deadline', () => {
     const state = running()
     expect(remainingMs(state, T0)).toBe(25 * MIN)
     expect(remainingMs(state, T0 + 10 * MIN)).toBe(15 * MIN)
     expect(progress(state, T0 + 5 * MIN)).toBeCloseTo(0.2)
   })
 
-  it('ne dérive pas quand aucun tick n’a eu lieu pendant 24 minutes', () => {
+  it('does not drift when no tick happened for 24 minutes', () => {
     const state = running()
-    // Onglet en arrière-plan : l'horloge a avancé, aucun callback n'a tourné.
+    // Backgrounded tab: the clock moved on, no callback ran.
     expect(remainingMs(state, T0 + 24 * MIN)).toBe(1 * MIN)
     expect(advance(state, ctxAt(T0 + 24 * MIN)).events).toHaveLength(0)
   })
 
-  it('ne rend jamais un écoulé négatif si l’horloge recule', () => {
+  it('never reports negative elapsed time when the clock goes backwards', () => {
     const state = running()
     expect(elapsedMs(state, T0 - 5 * MIN)).toBe(0)
     expect(progress(state, T0 - 5 * MIN)).toBe(0)
   })
 })
 
-describe('pause', () => {
-  it('gèle le décompte et décale l’échéance du temps passé en pause', () => {
+describe('pausing', () => {
+  it('freezes the countdown and pushes the deadline by the paused time', () => {
     let state = running()
     state = pause(state, ctxAt(T0 + 10 * MIN))
 
-    // Le restant ne bouge plus pendant la pause, même si l'horloge tourne.
+    // The remaining time stops moving while paused, even as the clock runs.
     expect(remainingMs(state, T0 + 10 * MIN)).toBe(15 * MIN)
     expect(remainingMs(state, T0 + 13 * MIN)).toBe(15 * MIN)
 
@@ -75,7 +75,7 @@ describe('pause', () => {
     expect(state.pausedTotalMs).toBe(3 * MIN)
   })
 
-  it('exclut le temps de pause du temps réellement travaillé', () => {
+  it('excludes paused time from the time actually worked', () => {
     let state = running()
     state = pause(state, ctxAt(T0 + 10 * MIN))
     state = resume(state, ctxAt(T0 + 13 * MIN))
@@ -84,16 +84,16 @@ describe('pause', () => {
     expect(record?.actualMs).toBe(17 * MIN)
   })
 
-  it('une longue pause ne fait pas perdre de temps de travail', () => {
+  it('a long pause costs no working time', () => {
     let state = running()
     state = pause(state, ctxAt(T0 + 10 * MIN))
     state = resume(state, ctxAt(T0 + 60 * MIN))
-    // 50 minutes de pause : l'échéance a glissé d'autant, il reste bien 15 minutes.
+    // 50 minutes paused: the deadline slid by the same amount, 15 minutes remain.
     expect(state.status).toBe('running')
     expect(remainingMs(state, T0 + 60 * MIN)).toBe(15 * MIN)
   })
 
-  it('reste en overtime après une pause prise au-delà de l’échéance', () => {
+  it('stays in overtime after pausing past the deadline', () => {
     const opts = { mode: 'overtime' } as const
     let state = advance(running(opts), ctxAt(T0 + 26 * MIN, opts)).state
     expect(state.status).toBe('overtime')
@@ -103,8 +103,8 @@ describe('pause', () => {
   })
 })
 
-describe('fin de session et enchaînement', () => {
-  it('termine à l’échéance, pas au moment où on s’en aperçoit', () => {
+describe('session end and chaining', () => {
+  it('ends at the deadline, not when we notice', () => {
     const state = running()
     const late = T0 + 40 * MIN
     const { events } = advance(state, ctxAt(late))
@@ -117,21 +117,21 @@ describe('fin de session et enchaînement', () => {
     expect(ended?.type === 'session-ended' && ended.lateByMs).toBe(15 * MIN)
   })
 
-  it('enchaîne la pause automatiquement quand la fin vient d’avoir lieu', () => {
+  it('chains the break automatically when the end just happened', () => {
     const result = advance(running(), ctxAt(T0 + 25 * MIN))
     expect(result.state.mode).toBe('shortBreak')
     expect(result.state.status).toBe('running')
-    // La pause a commencé quand le focus s'est terminé, pas une seconde plus tard.
+    // The break started when the focus ended, not a second later.
     expect(result.state.startedAt).toBe(T0 + 25 * MIN)
   })
 
-  it('n’enchaîne pas une pause due depuis trop longtemps', () => {
+  it('does not chain a break that has been due for too long', () => {
     const result = advance(running(), ctxAt(T0 + 25 * MIN + CATCH_UP_GRACE_MS + 1))
     expect(result.state.mode).toBe('shortBreak')
     expect(result.state.status).toBe('idle')
   })
 
-  it('donne une longue pause tous les quatre focus', () => {
+  it('gives a long break every four focus sessions', () => {
     let state = running()
     let ctx = ctxAt(T0)
     const modes: string[] = []
@@ -142,7 +142,7 @@ describe('fin de session et enchaînement', () => {
       const result = advance(state, ctx)
       state = result.state
       modes.push(state.mode)
-      // On passe la pause pour revenir à un focus.
+      // Skip the break to get back to a focus session.
       const skipped = finish(state, ctxAt(at + 1), 'skipped')
       state = startPhase(skipped.state, ctxAt(at + 2))
     }
@@ -150,7 +150,7 @@ describe('fin de session et enchaînement', () => {
     expect(modes).toEqual(['shortBreak', 'shortBreak', 'shortBreak', 'longBreak'])
   })
 
-  it('remet le compteur à zéro après la longue pause', () => {
+  it('resets the counter after the long break', () => {
     let state: TimerState = { ...running(), focusSinceLongBreak: 4 }
     state = advance(state, ctxAt(T0 + 25 * MIN)).state
     expect(state.mode).toBe('longBreak')
@@ -159,8 +159,8 @@ describe('fin de session et enchaînement', () => {
     expect(state.mode).toBe('focus')
   })
 
-  it('ne compte pas un focus annulé, et ne perd pas la longue pause due', () => {
-    // Trois focus faits, le quatrième est annulé : la longue pause reste due.
+  it('does not count a voided focus, and does not lose the long break that is due', () => {
+    // Three focus sessions done, the fourth is voided: the long break stays due.
     let state: TimerState = { ...running(), focusSinceLongBreak: 3 }
     const voided = finish(state, ctxAt(T0 + 3 * MIN), 'voided')
     state = voided.state
@@ -168,13 +168,13 @@ describe('fin de session et enchaînement', () => {
     expect(state.focusSinceLongBreak).toBe(3)
     expect(state.mode).toBe('shortBreak')
 
-    // Le focus suivant, lui, compte : la longue pause arrive bien.
+    // The next one does count: the long break duly arrives.
     state = startPhase({ ...state, mode: 'focus', status: 'idle' }, ctxAt(T0 + 5 * MIN))
     state = advance(state, ctxAt(T0 + 30 * MIN)).state
     expect(state.mode).toBe('longBreak')
   })
 
-  it('enregistre les interruptions sur la session', () => {
+  it('records interruptions on the session', () => {
     let state = addInterruption(running(), 'internal')
     state = addInterruption(state, 'external')
     state = addInterruption(state, 'internal')
@@ -183,8 +183,8 @@ describe('fin de session et enchaînement', () => {
   })
 })
 
-describe('mode overtime', () => {
-  it('continue de compter au-delà de zéro au lieu de terminer', () => {
+describe('overtime mode', () => {
+  it('keeps counting past zero instead of finishing', () => {
     const state = running({ mode: 'overtime' })
     const result = advance(state, ctxAt(T0 + 25 * MIN + 1, { mode: 'overtime' }))
 
@@ -193,14 +193,14 @@ describe('mode overtime', () => {
     expect(remainingMs(result.state, T0 + 30 * MIN)).toBe(-5 * MIN)
   })
 
-  it('n’émet l’événement overtime qu’une seule fois', () => {
+  it('emits the overtime event only once', () => {
     const state = running({ mode: 'overtime' })
     const first = advance(state, ctxAt(T0 + 26 * MIN, { mode: 'overtime' }))
     const second = advance(first.state, ctxAt(T0 + 27 * MIN, { mode: 'overtime' }))
     expect(second.events).toHaveLength(0)
   })
 
-  it('comptabilise le dépassement à l’arrêt manuel', () => {
+  it('records the overshoot when stopped by hand', () => {
     const state = running({ mode: 'overtime' })
     const overtime = advance(state, ctxAt(T0 + 26 * MIN, { mode: 'overtime' })).state
     const [record] = endedRecords(
@@ -211,8 +211,8 @@ describe('mode overtime', () => {
   })
 })
 
-describe('mode flowtime', () => {
-  it('démarre un focus sans échéance', () => {
+describe('flowtime mode', () => {
+  it('starts a focus session with no deadline', () => {
     const state = running({ mode: 'flowtime' })
     expect(state.endsAt).toBeNull()
     expect(remainingMs(state, T0 + 90 * MIN)).toBeNull()
@@ -220,14 +220,14 @@ describe('mode flowtime', () => {
     expect(advance(state, ctxAt(T0 + 90 * MIN, { mode: 'flowtime' })).events).toHaveLength(0)
   })
 
-  it('propose une pause proportionnelle au temps travaillé', () => {
+  it('offers a break proportional to the time worked', () => {
     const state = running({ mode: 'flowtime' })
     const result = finish(state, ctxAt(T0 + 50 * MIN, { mode: 'flowtime' }), 'completed')
     expect(result.state.mode).toBe('shortBreak')
     expect(result.state.plannedMs).toBe(10 * MIN)
   })
 
-  it('n’enferme jamais l’utilisateur dans une pause d’une seconde', () => {
+  it('never traps the user in a one-second break', () => {
     const state = running({ mode: 'flowtime' })
     const result = finish(state, ctxAt(T0 + 30_000, { mode: 'flowtime' }), 'completed')
     expect(result.state.plannedMs).toBe(60_000)

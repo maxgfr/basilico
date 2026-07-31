@@ -6,11 +6,10 @@ import { TimerRing } from './TimerRing'
 import { useNow } from './runtime'
 
 /**
- * Le minuteur dans la fenêtre flottante.
+ * The timer inside the floating window.
  *
- * Volontairement réduit à l'essentiel — le temps, le mode, démarrer/pause : une
- * fenêtre de 300 px posée par-dessus le travail de quelqu'un n'est pas l'endroit
- * où caser la liste des tâches.
+ * Deliberately down to essentials — time, mode, start/pause: a 300 px window
+ * sitting on top of someone's work is not where a task list belongs.
  */
 export function PipTimer({ target }: { target: Window }) {
   const timer = useApp((s) => s.timer)

@@ -3,8 +3,8 @@ import { expect, test } from '@playwright/test'
 const START = new Date('2026-07-31T09:00:00')
 
 test.beforeEach(async ({ page }) => {
-  // Horloge contrôlée : on teste un focus de 25 minutes sans attendre 25 minutes,
-  // et surtout on vérifie que l'échéance absolue fait foi.
+  // Controlled clock: we test a 25-minute focus without waiting 25 minutes, and
+  // above all we verify that the absolute deadline is what counts.
   await page.clock.install({ time: START })
   await page.goto('/')
 })
@@ -18,7 +18,7 @@ test('a completed focus credits the task and fills the stats', async ({ page }) 
 
   await page.clock.fastForward('25:01')
 
-  // La pause s'enchaîne, et la session vient d'être enregistrée.
+  // The break chains on, and the session has just been recorded.
   await expect(page.getByRole('timer')).toContainText('04:5')
   await expect(page.getByRole('timer')).toHaveAccessibleName(/Short break/)
   await expect(page.getByTitle(/1 of 1 estimated/).first()).toBeVisible()
@@ -36,7 +36,7 @@ test('state survives a reload and time keeps running', async ({ page }) => {
   await page.clock.fastForward('05:00')
   await page.reload()
 
-  // Le rechargement ne remet pas le compteur à 25 : c'est l'échéance qui compte.
+  // Reloading does not reset the counter to 25: the deadline is what counts.
   await expect(page.getByRole('timer')).toContainText('19:5')
   await expect(page.getByRole('button', { name: 'Pause' })).toBeVisible()
 })
@@ -44,17 +44,16 @@ test('state survives a reload and time keeps running', async ({ page }) => {
 test('a session that ended while away is caught up', async ({ page }) => {
   await page.getByRole('button', { name: 'Start' }).click()
 
-  // Quarante minutes passent : la session s'est terminée à son échéance, quinze
-  // minutes plus tôt.
+  // Forty minutes pass: the session ended at its deadline, fifteen minutes ago.
   await page.clock.fastForward('40:00')
 
   await expect(page.getByText(/ended/)).toBeVisible()
   await expect(page.getByText(/15 minutes ago/)).toBeVisible()
-  // Rien ne s'est enchaîné tout seul : la pause attend une décision.
+  // Nothing chained on its own: the break waits for a decision.
   await expect(page.getByRole('button', { name: 'Start' })).toBeVisible()
 
-  // Et le message survit au rechargement : c'est justement quelqu'un qui avait
-  // fermé son onglet qui doit le lire.
+  // And the message survives a reload: the person who closed their tab is
+  // precisely the one who needs to read it.
   await page.reload()
   await expect(page.getByText(/15 minutes ago/)).toBeVisible()
 })

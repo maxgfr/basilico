@@ -21,8 +21,8 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter @basilico/extension build
 
-      # Un zip du dossier `dist`, pas du dossier parent : Chrome attend un
-      # répertoire qui contient `manifest.json` à sa racine.
+      # A zip of the `dist` folder, not its parent: Chrome expects a directory
+      # with `manifest.json` at its root.
       - name: Package the extension
         run: cd apps/extension/dist && zip -r ../../../basilico-extension.zip .
 

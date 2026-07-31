@@ -2,19 +2,20 @@ import { defineConfig } from 'vite'
 import { resolve } from 'node:path'
 
 /**
- * Une extension MV3 n'a pas d'entrée unique : le service worker, le content
- * script, le document offscreen et le popup sont chargés séparément par Chrome.
+ * An MV3 extension has no single entry point: the service worker, the content
+ * script, the offscreen document and the popup are each loaded separately by
+ * Chrome.
  *
- * Chaque sortie garde donc un nom fixe et n'est pas découpée en morceaux :
- * `manifest.json` référence des fichiers précis, et un content script ne sait
- * pas charger un chunk. Le hachage des noms est désactivé pour la même raison.
+ * So every output keeps a fixed name and is not split into chunks:
+ * `manifest.json` references precise files, and a content script cannot load a
+ * chunk. Name hashing is off for the same reason.
  */
 export default defineConfig({
   build: {
     outDir: 'dist',
     emptyOutDir: true,
     target: 'chrome116',
-    // Vite 8 tourne sur Rolldown : la clé n'est plus `rollupOptions`.
+    // Vite 8 runs on Rolldown: the key is no longer `rollupOptions`.
     rolldownOptions: {
       input: {
         background: resolve(import.meta.dirname, 'src/background.ts'),
@@ -26,7 +27,7 @@ export default defineConfig({
         entryFileNames: '[name].js',
         chunkFileNames: 'chunks/[name].js',
         assetFileNames: 'assets/[name][extname]',
-        // Un content script est injecté tel quel : il ne peut pas importer de chunk.
+        // A content script is injected as-is: it cannot import a chunk.
         inlineDynamicImports: false,
       },
     },

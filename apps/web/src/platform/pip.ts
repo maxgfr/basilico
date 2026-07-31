@@ -1,15 +1,14 @@
 import { useCallback, useEffect, useState } from 'react'
 
 /**
- * Fenêtre flottante via l'API Document Picture-in-Picture.
+ * Floating window through the Document Picture-in-Picture API.
  *
- * C'est une vraie fenêtre de navigateur, toujours au-dessus des autres, dans
- * laquelle on rend du DOM ordinaire — pas une vidéo. D'où la nécessité de lui
- * recopier les feuilles de style : elle a son propre document.
+ * It is a real browser window, always on top, into which we render ordinary DOM
+ * — not a video. Hence the need to copy the stylesheets over: it has its own
+ * document.
  *
- * Chromium uniquement pour l'instant. Ailleurs, `supported` reste faux et
- * l'option n'est simplement pas proposée : pas d'imitation dégradée qui
- * prétendrait faire la même chose.
+ * Chromium only for now. Elsewhere `supported` stays false and the option
+ * simply isn't offered: no degraded imitation pretending to do the same thing.
  */
 
 type PipApi = {
@@ -24,9 +23,9 @@ function api(): PipApi | null {
 export const pipSupported = (): boolean => api() !== null
 
 /**
- * Recopie les styles du document principal dans la fenêtre flottante.
- * `cssRules` lève sur une feuille d'une autre origine : on retombe alors sur un
- * `<link>`, qui laisse le navigateur la recharger lui-même.
+ * Copies the main document's styles into the floating window.
+ * `cssRules` throws on a cross-origin sheet: we fall back to a `<link>`, which
+ * lets the browser fetch it again itself.
  */
 function copyStyles(target: Window): void {
   for (const sheet of Array.from(document.styleSheets)) {
@@ -46,8 +45,8 @@ function copyStyles(target: Window): void {
     }
   }
 
-  // Le thème vit sur <html> : sans lui, la fenêtre flottante s'ouvrirait
-  // systématiquement dans la palette sombre.
+  // The theme lives on <html>: without it the floating window would always open
+  // in the dark palette.
   const theme = document.documentElement.dataset.theme
   if (theme) target.document.documentElement.dataset.theme = theme
   target.document.body.style.margin = '0'
@@ -71,13 +70,13 @@ export function usePictureInPicture(): {
     }
 
     try {
-      // Doit partir d'un geste utilisateur, sinon le navigateur refuse.
+      // Must originate from a user gesture, otherwise the browser refuses.
       const target = await pip.requestWindow({ width: 300, height: 200 })
       copyStyles(target)
       target.addEventListener('pagehide', () => setPipWindow(null))
       setPipWindow(target)
     } catch {
-      // Refus ou fermeture immédiate : rien à signaler, l'app continue.
+      // Refused or closed immediately: nothing to report, the app carries on.
       setPipWindow(null)
     }
   }, [])

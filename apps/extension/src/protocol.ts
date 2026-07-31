@@ -1,17 +1,17 @@
 import type { Mode } from '@basilico/core'
 
 /**
- * Protocole entre l'application web et l'extension.
+ * Protocol between the web app and the extension.
  *
- * L'extension est un **notificateur, pas un second minuteur**. L'app reste la
- * seule source de vérité : elle annonce son échéance, l'extension se contente de
- * poser une alarme et d'alerter. Deux minuteurs indépendants finiraient
- * inévitablement par diverger, et il faudrait alors arbitrer lequel a raison.
+ * The extension is a **notifier, not a second timer**. The app remains the
+ * single source of truth: it announces its deadline, the extension merely sets
+ * an alarm and alerts. Two independent timers would inevitably drift apart, and
+ * you would then have to arbitrate which one is right.
  *
- * Le pont passe par un content script et `window.postMessage` plutôt que par
- * `chrome.runtime.sendMessage(id, …)` : l'identifiant d'extension change entre
- * une installation en mode développeur et une publication au Store, et la page
- * n'a aucun moyen fiable de le connaître.
+ * The bridge goes through a content script and `window.postMessage` rather than
+ * `chrome.runtime.sendMessage(id, …)`: the extension id differs between a
+ * developer-mode install and a Store publication, and the page has no reliable
+ * way of knowing it.
  */
 
 export const FROM_APP = 'basilico-app'
@@ -19,9 +19,9 @@ export const FROM_EXTENSION = 'basilico-extension'
 
 export type Phase = {
   mode: Mode
-  /** Échéance absolue en ms epoch, `null` si rien ne tourne. */
+  /** Absolute deadline in epoch ms, `null` when nothing is running. */
   endsAt: number | null
-  /** Titre de la tâche en cours, pour le corps de la notification. */
+  /** Title of the current task, for the notification body. */
   taskTitle: string | null
 }
 

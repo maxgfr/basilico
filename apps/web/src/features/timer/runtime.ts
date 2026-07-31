@@ -1,13 +1,13 @@
 import { useEffect, useState } from 'react'
 import { useApp } from '../../store/app'
 
-/** Marge après l'échéance : un `setTimeout` peut tirer ~1 s en retard en arrière-plan. */
+/** Slack after the deadline: a background `setTimeout` can fire ~1 s late. */
 const DEADLINE_SLACK_MS = 60
 
 /**
- * Horloge d'affichage. Ne tourne que si la page est visible et le minuteur actif :
- * un onglet caché qui consomme du CPU est exactement ce qui le fait geler par
- * l'économiseur d'énergie de Chrome, et le repaint n'a aucun intérêt hors écran.
+ * Display clock. Only runs while the page is visible and the timer is active: a
+ * hidden tab burning CPU is exactly what gets it frozen by Chrome's Energy
+ * Saver, and repainting off-screen is worth nothing anyway.
  */
 export function useNow(active: boolean, intervalMs = 250): number {
   const [now, setNow] = useState(() => Date.now())
@@ -40,13 +40,13 @@ export function useNow(active: boolean, intervalMs = 250): number {
 }
 
 /**
- * Fait avancer le minuteur. Trois déclencheurs, complémentaires :
+ * Drives the timer forward. Three complementary triggers:
  *
- * 1. un unique `setTimeout` armé sur l'échéance — non imbriqué, il échappe au
- *    throttling agressif de Chrome et tire au pire une seconde trop tard ;
- * 2. le retour de visibilité, le `pageshow` (bfcache) et le `focus` fenêtre, qui
- *    rattrapent le cas où l'onglet a été gelé ou mis en veille ;
- * 3. le tick d'affichage, qui sert de filet quand tout le reste a échoué.
+ * 1. a single `setTimeout` armed on the deadline — un-nested, so it escapes
+ *    Chrome's intensive throttling and fires at worst a second late;
+ * 2. visibility coming back, `pageshow` (bfcache) and window `focus`, which
+ *    cover the case where the tab was frozen or the machine slept;
+ * 3. the display tick, as a net for when everything else failed.
  */
 export function useTimerRuntime(): void {
   const tick = useApp((s) => s.tick)

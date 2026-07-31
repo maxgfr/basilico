@@ -2,23 +2,22 @@ import type { ReactNode } from 'react'
 
 type Props = {
   title: string
-  /** Résumé lu avant le détail chiffré. */
+  /** Summary read out before the figures. */
   summary: string
   columns: [string, string]
-  /** Les mêmes chiffres que le graphe : sélectionnables, copiables, lus à voix haute. */
+  /** The same numbers as the chart: selectable, copyable, read aloud. */
   rows: [string, string][]
   children: ReactNode
   action?: ReactNode
 }
 
 /**
- * Enveloppe accessible commune à tous les graphes.
+ * The accessible wrapper shared by every chart.
  *
- * Le dessin est marqué `aria-hidden` et c'est le tableau `sr-only` qui porte
- * l'information : un lecteur d'écran obtient les valeurs exactes plutôt qu'une
- * description approximative. Un graphe en canvas, lui, ne rend rien du tout dans
- * l'arbre d'accessibilité — c'est la raison principale pour laquelle ces graphes
- * sont écrits à la main plutôt que pris dans une bibliothèque.
+ * The drawing is `aria-hidden` and the `sr-only` table carries the information:
+ * a screen reader gets exact values rather than an approximate description. A
+ * canvas chart renders nothing at all into the accessibility tree — that is the
+ * main reason these charts are hand-written instead of pulled from a library.
  */
 export function Figure({ title, summary, columns, rows, children, action }: Props) {
   return (
@@ -29,9 +28,9 @@ export function Figure({ title, summary, columns, rows, children, action }: Prop
       </figcaption>
 
       {/*
-        Ce conteneur peut défiler horizontalement sur les petits écrans (la
-        heatmap fait 53 colonnes). Un `tabindex` le rend atteignable au clavier :
-        sans lui, son contenu n'est accessible qu'à la souris. WCAG 2.1.1.
+        This container can scroll horizontally on small screens (the heatmap is
+        53 columns wide). A `tabindex` makes it keyboard-reachable: without one,
+        its content is mouse-only. WCAG 2.1.1.
       */}
       <div
         className="focus-visible:outline-ink-300 overflow-x-auto rounded focus-visible:outline-2 focus-visible:outline-offset-4"

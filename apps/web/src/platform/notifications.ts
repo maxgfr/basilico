@@ -1,14 +1,14 @@
 /**
- * Notifications système.
+ * System notifications.
  *
- * On passe toujours par `ServiceWorkerRegistration.showNotification` : le
- * constructeur `new Notification()` lève un `TypeError` sur Android et ne
- * supporte pas les boutons d'action. Le constructeur ne sert que de repli quand
- * aucun service worker n'est enregistré (dev sans PWA).
+ * Always through `ServiceWorkerRegistration.showNotification`: the
+ * `new Notification()` constructor throws a `TypeError` on Android and supports
+ * no action buttons. The constructor is only a fallback when no service worker
+ * is registered (dev without the PWA).
  *
- * Rien de tout ça ne fonctionne onglet fermé : ça exigerait le Web Push, donc un
- * serveur et des clés VAPID, qu'on n'a pas par choix. L'API Notification Triggers,
- * qui aurait résolu le problème sans serveur, a été abandonnée par Chrome.
+ * None of this works with the tab closed: that would need Web Push, hence a
+ * server and VAPID keys, which we deliberately don't have. The Notification
+ * Triggers API, which would have solved it server-free, was abandoned by Chrome.
  */
 
 export type NotificationPermissionState = 'unsupported' | NotificationPermission
@@ -21,9 +21,8 @@ export function permissionState(): NotificationPermissionState {
 }
 
 /**
- * À n'appeler que depuis un geste utilisateur explicite. Une demande au
- * chargement est refusée d'office par les navigateurs, et un refus est
- * **définitif** : il ne peut plus être redemandé par le code.
+ * Only ever call this from an explicit user gesture. Browsers auto-reject a
+ * request made on load, and a refusal is **final**: code can never ask again.
  */
 export async function requestPermission(): Promise<NotificationPermissionState> {
   if (typeof Notification === 'undefined') return 'unsupported'
@@ -41,9 +40,9 @@ export async function notify(title: string, body: string): Promise<void> {
   const options = {
     body,
     tag: TAG,
-    // `renotify` réalerte quand une notification du même tag est remplacée, au lieu
-    // d'en empiler cinq en silence. Il n'existe que sur le chemin service worker,
-    // que la définition TypeScript de `NotificationOptions` ne couvre pas.
+    // `renotify` re-alerts when a notification with the same tag is replaced,
+    // instead of silently stacking five. It only exists on the service worker
+    // path, which TypeScript's `NotificationOptions` does not cover.
     renotify: true,
     icon: `${import.meta.env.BASE_URL}favicon.svg`,
     badge: `${import.meta.env.BASE_URL}favicon.svg`,
@@ -56,14 +55,14 @@ export async function notify(title: string, body: string): Promise<void> {
       return
     }
   } catch {
-    // Pas de service worker : on tente le constructeur ci-dessous.
+    // No service worker: fall through to the constructor below.
   }
 
   try {
-    // `renotify` sans service worker lève sur certaines plateformes.
-    // oxlint-disable-next-line no-new -- l'API ne rend rien d'utile
+    // `renotify` without a service worker throws on some platforms.
+    // oxlint-disable-next-line no-new -- the API returns nothing useful
     new Notification(title, { body, tag: TAG })
   } catch {
-    // Notification impossible ici (Android sans SW) : le son et l'onglet suffisent.
+    // Notifications impossible here (Android without SW): sound and the tab title do the job.
   }
 }

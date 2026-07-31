@@ -15,14 +15,14 @@ const session: SessionRecord = {
   taskId: 't1',
   tag: 'boulot',
   interruptions: { internal: 1, external: 0 },
-  intention: 'Écrire le noyau',
+  intention: 'Write the core',
   note: null,
   rating: null,
 }
 
 const task: Task = {
   id: 't1',
-  title: 'Noyau de domaine',
+  title: 'Domain core',
   notes: null,
   tag: 'boulot',
   estimatedPomodoros: 3,
@@ -33,33 +33,33 @@ const task: Task = {
   completedAt: null,
 }
 
-describe('réglages', () => {
-  it('fait apparaître les nouveaux champs imbriqués chez les anciens utilisateurs', () => {
-    // Une sauvegarde d'une version où `sound.ticking` n'existait pas encore.
+describe('settings', () => {
+  it('surfaces newly nested fields for existing users', () => {
+    // A backup from a version where `sound.ticking` did not exist yet.
     const old = { schemaVersion: 1, sound: { enabled: false, alarm: 'bell', volume: 0.2 } }
     const settings = parseSettings(old)
     expect(settings.sound.enabled).toBe(false)
     expect(settings.sound.alarm).toBe('bell')
-    // Une fusion superficielle aurait laissé ce champ indéfini à vie.
+    // A shallow merge would have left this field undefined forever.
     expect(settings.sound.ticking).toBe(false)
     expect(settings.durations.focus).toBe(25)
   })
 
-  it('ne laisse pas des réglages corrompus empêcher le démarrage', () => {
+  it('does not let corrupted settings block startup', () => {
     expect(parseSettings({ durations: { focus: -5 } })).toEqual(defaultSettings)
     expect(parseSettings('nope')).toEqual(defaultSettings)
     expect(parseSettings(null)).toEqual(defaultSettings)
   })
 
-  it('ignore les clés inconnues au lieu de les recopier', () => {
+  it('ignores unknown keys instead of copying them through', () => {
     const merged = mergeSettings(defaultSettings, { inconnu: 42, longBreakEvery: 3 })
     expect(merged).not.toHaveProperty('inconnu')
     expect(merged.longBreakEvery).toBe(3)
   })
 })
 
-describe('sauvegarde', () => {
-  it('fait un aller-retour sans perte', () => {
+describe('backup', () => {
+  it('round-trips without loss', () => {
     const backup = createBackup(defaultSettings, [session], [task], 1_000)
     const result = parseBackup(JSON.stringify(backup))
 
@@ -70,7 +70,7 @@ describe('sauvegarde', () => {
     expect(result.backup.settings).toEqual(defaultSettings)
   })
 
-  it('complète les champs absents d’une sauvegarde plus ancienne', () => {
+  it('fills in fields missing from an older backup', () => {
     const legacy = {
       app: 'basilico',
       version: 1,
@@ -96,7 +96,7 @@ describe('sauvegarde', () => {
     expect(result.backup.sessions[0]?.interruptions).toEqual({ internal: 0, external: 0 })
   })
 
-  it('explique pourquoi un fichier est refusé plutôt que de l’avaler', () => {
+  it('explains why a file is rejected instead of swallowing it', () => {
     expect(parseBackup('{not json')).toEqual({
       ok: false,
       error: 'This file is not valid JSON.',
@@ -126,15 +126,15 @@ describe('sauvegarde', () => {
 })
 
 describe('exports', () => {
-  it('échappe les virgules et guillemets en CSV', () => {
-    const csv = toCsv([{ ...session, intention: 'Écrire "le", noyau' }])
+  it('escapes commas and quotes in CSV', () => {
+    const csv = toCsv([{ ...session, intention: 'Write "the", core' }])
     const [header, row] = csv.split('\n')
     expect(header).toContain('interruptions_internal')
-    expect(row).toContain('"Écrire ""le"", noyau"')
+    expect(row).toContain('"Write ""the"", core"')
     expect(row).toContain('25')
   })
 
-  it('n’exporte que des pomodoros réellement faits au format Open Pomodoro', () => {
+  it('only exports pomodoros that really happened in Open Pomodoro format', () => {
     const output = JSON.parse(
       toOpenPomodoro([session, { ...session, id: 's2', outcome: 'voided' }]),
     ) as { pomodoros: { start_time: string; duration: number; tags: string[] }[] }
@@ -142,7 +142,7 @@ describe('exports', () => {
     expect(output.pomodoros).toHaveLength(1)
     expect(output.pomodoros[0]).toEqual({
       start_time: '2026-07-31T08:00:00.000Z',
-      description: 'Écrire le noyau',
+      description: 'Write the core',
       duration: 25,
       tags: ['boulot'],
     })

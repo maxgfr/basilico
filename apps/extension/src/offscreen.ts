@@ -1,9 +1,9 @@
 /**
- * Document offscreen : la seule façon de jouer un son depuis une extension MV3,
- * dont le service worker n'a pas d'API audio.
+ * Offscreen document: the only way to play a sound from an MV3 extension, whose
+ * service worker has no audio API.
  *
- * La sonnerie est synthétisée plutôt que chargée : aucun fichier à empaqueter,
- * aucune licence à traîner, et le même carillon que dans l'application web.
+ * The alarm is synthesised rather than loaded: no file to package, no licence to
+ * carry around, and the same chime as in the web app.
  */
 const PARTIALS = [
   { freq: 880, at: 0, length: 1.4 },
@@ -32,8 +32,8 @@ function chime(): void {
     osc.stop(at + partial.length + 0.05)
   }
 
-  // Le document offscreen se ferme tout seul : le laisser vivre consommerait
-  // de la mémoire pour rien jusqu'au prochain redémarrage du navigateur.
+  // The offscreen document closes itself: leaving it alive would waste memory
+  // until the browser restarts.
   setTimeout(() => void chrome.offscreen.closeDocument().catch(() => {}), 2500)
 }
 

@@ -10,33 +10,33 @@ function seed(): Task[] {
   return tasks
 }
 
-describe('tâches', () => {
-  it('empile les nouvelles tâches à la fin', () => {
+describe('tasks', () => {
+  it('appends new tasks at the end', () => {
     expect(seed().map((t) => t.order)).toEqual([0, 1, 2])
   })
 
-  it('impose au moins un pomodoro estimé', () => {
+  it('enforces at least one estimated pomodoro', () => {
     const t = createTask([], { title: 'X', estimatedPomodoros: 0 }, 0, 'x')
     expect(t.estimatedPomodoros).toBe(1)
   })
 
-  it('réordonne et renumérote proprement', () => {
+  it('reorders and renumbers cleanly', () => {
     const moved = reorderTasks(seed(), 'c', 0)
     expect(moved.map((t) => t.id)).toEqual(['c', 'a', 'b'])
     expect(moved.map((t) => t.order)).toEqual([0, 1, 2])
   })
 
-  it('ne sort pas des bornes quand la cible est absurde', () => {
+  it('stays in bounds when the target index is absurd', () => {
     expect(reorderTasks(seed(), 'a', 99).map((t) => t.id)).toEqual(['b', 'c', 'a'])
   })
 
-  it('crédite un pomodoro à la tâche active, et ignore l’absence de tâche', () => {
+  it('credits a pomodoro to the active task, and tolerates having none', () => {
     const credited = creditPomodoro(seed(), 'b')
     expect(credited.find((t) => t.id === 'b')?.completedPomodoros).toBe(1)
     expect(creditPomodoro(credited, null)).toEqual(credited)
   })
 
-  it('masque les archivées et garde les terminées visibles', () => {
+  it('hides archived tasks and keeps completed ones visible', () => {
     let tasks = setTaskStatus(seed(), 'a', 'done', 500)
     tasks = setTaskStatus(tasks, 'b', 'archived', 500)
     expect(visibleTasks(tasks).map((t) => t.id)).toEqual(['a', 'c'])

@@ -5,7 +5,7 @@ import { App } from './App'
 import { STORAGE_KEY, useApp } from './store/app'
 import { createTimerState, defaultSettings } from '@basilico/core'
 
-/** Remet le store et le stockage à zéro : les tests ne doivent pas se contaminer. */
+/** Resets the store and storage: tests must not contaminate each other. */
 function resetApp() {
   localStorage.clear()
   useApp.setState({
@@ -66,8 +66,8 @@ describe('main screen', () => {
     const raw = localStorage.getItem(STORAGE_KEY)
     expect(raw).not.toBeNull()
     const saved = JSON.parse(raw ?? '{}') as { state: { timer: { endsAt: number | null } } }
-    // C'est l'échéance absolue qui est persistée, jamais un « temps restant »
-    // qui ressusciterait un minuteur périmé au rechargement.
+    // The absolute deadline is what gets persisted, never a "remaining time"
+    // that would resurrect a stale timer on reload.
     expect(saved.state.timer.endsAt).toBeTypeOf('number')
     expect(JSON.stringify(saved)).not.toContain('remainingMs')
   })

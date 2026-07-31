@@ -2,15 +2,15 @@ import { useEffect, useState } from 'react'
 import { useApp } from '../store/app'
 
 /**
- * Pont vers l'extension Chrome, quand elle est installée.
+ * Bridge to the Chrome extension, when it is installed.
  *
- * Sans elle, une notification ne peut pas partir onglet fermé : ça exigerait le
- * Web Push, donc un serveur. L'extension, elle, pose une vraie alarme système.
+ * Without it, no notification can fire once the tab is closed: that would need
+ * Web Push, hence a server. The extension sets a real system alarm instead.
  *
- * L'application reste la seule source de vérité : elle annonce son échéance,
- * l'extension se contente d'alerter. Le dialogue passe par `window.postMessage`
- * et un content script, parce que la page n'a aucun moyen fiable de connaître
- * l'identifiant de l'extension.
+ * The app stays the single source of truth: it announces its deadline, the
+ * extension merely alerts. The conversation goes through `window.postMessage`
+ * and a content script, because the page has no reliable way of knowing the
+ * extension's id.
  */
 
 const FROM_APP = 'basilico-app'
@@ -22,7 +22,7 @@ function post(message: Record<string, unknown>): void {
   window.postMessage({ source: FROM_APP, ...message }, window.location.origin)
 }
 
-/** `null` tant qu'on ne sait pas, sinon la version de l'extension détectée. */
+/** `null` while unknown, otherwise the detected extension version. */
 export function useExtensionBridge(): string | null {
   const [version, setVersion] = useState<string | null>(null)
 
@@ -38,8 +38,8 @@ export function useExtensionBridge(): string | null {
     }
 
     window.addEventListener('message', onMessage)
-    // Le content script s'annonce au chargement ; s'il l'a fait avant qu'on
-    // écoute, ce ping le fait répondre.
+    // The content script announces itself on load; if it did so before we were
+    // listening, this ping makes it answer.
     post({ type: 'ping' })
     return () => window.removeEventListener('message', onMessage)
   }, [])

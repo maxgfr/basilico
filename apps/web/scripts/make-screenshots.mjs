@@ -1,12 +1,12 @@
 /**
- * Produit les captures du README à partir de la version buildée.
+ * Produces the README screenshots from the built app.
  *
- * `pnpm preview` doit tourner sur le port 4173. On sème des données de
- * démonstration crédibles — clairement synthétiques, jamais présentées comme
- * réelles — puis on capture chaque écran dans les deux thèmes.
+ * `pnpm preview` must be running on port 4173. We seed believable demo data —
+ * clearly synthetic, never presented as real — then capture each screen in both
+ * themes.
  *
- * L'horloge n'est pas simulée : une horloge factice gèle la frise d'animation
- * de Chromium et l'anneau de progression sortirait vide sur les captures.
+ * The clock is not faked: a fake clock freezes Chromium's animation timeline and
+ * the progress ring would come out empty in the screenshots.
  */
 import { chromium, devices } from '@playwright/test'
 import { mkdir } from 'node:fs/promises'
@@ -90,7 +90,7 @@ const seed = async (page, { theme }) => {
     { theme },
   )
   await page.reload()
-  // Laisser la transition de l'anneau se terminer avant de figer l'image.
+  // Let the ring's transition finish before freezing the image.
   await page.waitForTimeout(900)
 }
 

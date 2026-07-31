@@ -2,12 +2,12 @@ import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
 
 /**
- * Audit automatisé WCAG 2.1 AA sur chaque écran, dans les deux thèmes.
+ * Automated WCAG 2.1 AA audit of every screen, in both themes.
  *
- * axe ne trouve qu'une partie des problèmes — il ne juge ni la pertinence d'un
- * libellé ni l'ordre de lecture — mais il attrape sans discussion les contrastes
- * insuffisants, les champs sans étiquette et les rôles mal employés, c'est-à-dire
- * exactement ce qui se glisse dans une interface au fil des retouches.
+ * axe only finds part of the problems — it judges neither the relevance of a
+ * label nor the reading order — but it catches insufficient contrast, unlabelled
+ * fields and misused roles without argument, which is exactly what creeps into
+ * an interface as it gets tweaked.
  */
 const SCREENS = [
   { name: 'timer', hash: '' },
@@ -22,7 +22,7 @@ for (const theme of ['dark', 'light'] as const) {
       await page.evaluate((theme) => {
         const raw = JSON.parse(localStorage.getItem('basilico:v1:app') ?? '{"state":{}}')
         raw.state.settings = { ...raw.state.settings, theme }
-        // Un peu de contenu : une page vide ne teste presque rien.
+        // Some content: an empty page tests almost nothing.
         raw.state.tasks = [
           {
             id: 't1',

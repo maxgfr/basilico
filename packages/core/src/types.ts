@@ -1,10 +1,10 @@
-/** Les trois phases d'un cycle. */
+/** The three phases of a cycle. */
 export type Mode = 'focus' | 'shortBreak' | 'longBreak'
 
 /**
- * Statut du minuteur.
- * `overtime` n'existe que si le réglage `mode` l'autorise : le compteur a dépassé
- * zéro et continue à monter au lieu de s'arrêter.
+ * Timer status.
+ * `overtime` only exists when the settings allow it: the counter has passed zero
+ * and keeps climbing instead of stopping.
  */
 export type TimerStatus = 'idle' | 'running' | 'paused' | 'overtime'
 
@@ -16,44 +16,46 @@ export type Interruptions = {
 }
 
 /**
- * Ce qui est persisté du minuteur. Aucune durée restante n'est stockée : seule
- * l'échéance absolue `endsAt` l'est, et le restant se recalcule à partir de l'horloge.
- * Persister un « restant » ressusciterait un minuteur périmé au rechargement.
+ * What gets persisted about the timer. No remaining duration is stored: only the
+ * absolute deadline `endsAt` is, and the remaining time is recomputed from the
+ * clock. Persisting a "remaining" would resurrect a stale timer on reload.
  */
 export type TimerState = {
   status: TimerStatus
   mode: Mode
-  /** Durée planifiée de la phase courante, en ms. */
+  /** Planned duration of the current phase, in ms. */
   plannedMs: number
-  /** Début de la phase (ms epoch), `null` tant qu'elle n'a pas démarré. */
+  /** When the phase started (epoch ms), `null` until it does. */
   startedAt: number | null
-  /** Échéance absolue (ms epoch). `null` à l'arrêt et en pause. */
+  /** Absolute deadline (epoch ms). `null` while idle or paused. */
   endsAt: number | null
-  /** Instant de mise en pause, `null` si le minuteur n'est pas en pause. */
+  /** When the timer was paused, `null` when it isn't. */
   pausedAt: number | null
-  /** Cumul des temps de pause de la phase courante, en ms. */
+  /** Total time spent paused during the current phase, in ms. */
   pausedTotalMs: number
-  /** Focus terminés depuis la dernière longue pause : pilote l'arrivée de celle-ci. */
+  /** Focus sessions completed since the last long break: drives when it comes. */
   focusSinceLongBreak: number
   interruptions: Interruptions
-  /** Tâche à laquelle la phase courante est rattachée. */
+  /** Task the current phase is attributed to. */
   taskId: string | null
-  /** Intention notée avant de démarrer la phase. */
+  /** Tag inherited from that task, frozen at the time the phase started. */
+  tag: string | null
+  /** Intention jotted down before starting the phase. */
   intention: string | null
 }
 
 export type SessionOutcome = 'completed' | 'voided' | 'skipped'
 
-/** Enregistrement immuable d'une session terminée. Le journal est append-only. */
+/** Immutable record of a finished session. The log is append-only. */
 export type SessionRecord = {
   id: string
   mode: Mode
   startedAt: number
   endedAt: number
   plannedMs: number
-  /** Temps réellement passé, hors pauses. */
+  /** Time actually spent, excluding pauses. */
   actualMs: number
-  /** Temps travaillé au-delà de zéro (mode overtime), 0 sinon. */
+  /** Time worked past zero (overtime mode), 0 otherwise. */
   overtimeMs: number
   outcome: SessionOutcome
   taskId: string | null

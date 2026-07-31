@@ -26,7 +26,7 @@ jobs:
       - run: pnpm test
       - run: pnpm build
 
-  # Job séparé : un flake Playwright ne doit pas masquer une erreur de type.
+  # Separate job: a Playwright flake must not mask a type error.
   e2e:
     runs-on: ubuntu-latest
     steps:
@@ -43,22 +43,22 @@ jobs:
         id: pwcache
         with:
           path: ~/.cache/ms-playwright
-          # Clé exacte, sans restore-keys : un hit partiel installerait la
-          # mauvaise révision de navigateur.
+          # Exact key, no restore-keys: a partial hit would install the wrong
+          # browser revision.
           key: playwright-${{ runner.os }}-${{ steps.pw.outputs.v }}
       - if: steps.pwcache.outputs.cache-hit != 'true'
         run: pnpm --filter @basilico/web exec playwright install --with-deps chromium
       - if: steps.pwcache.outputs.cache-hit == 'true'
-        # Les bibliothèques système vivent hors du cache : à réinstaller même sur un hit.
+        # System libraries live outside the cache: reinstall even on a hit.
         run: pnpm --filter @basilico/web exec playwright install-deps chromium
       - run: pnpm --filter @basilico/web e2e
-      # L'extension se teste chargée dans un vrai Chromium : le câblage MV3
-      # (service worker module, alarmes, offscreen) n'échoue qu'à l'exécution.
+      # The extension is tested loaded into a real Chromium: the MV3 wiring
+      # (module service worker, alarms, offscreen) only fails at runtime.
       - run: pnpm --filter @basilico/extension build
       - run: pnpm --filter @basilico/extension e2e
 
-      # Le paquet chargeable est publié à chaque exécution : on peut l'installer
-      # depuis n'importe quel commit, sans attendre une release taguée.
+      # The loadable package is published on every run: it can be installed from
+      # any commit, without waiting for a tagged release.
       - name: Package the extension
         run: cd apps/extension/dist && zip -r ../../../basilico-extension.zip .
       - uses: actions/upload-artifact@v7

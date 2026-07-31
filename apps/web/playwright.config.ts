@@ -15,7 +15,7 @@ export default defineConfig({
     { name: 'mobile', use: { ...devices['Pixel 7'] } },
   ],
   webServer: {
-    // On teste l'artefact réellement livré, pas le serveur de développement.
+    // We test the artefact we actually ship, not the dev server.
     command: `pnpm build && pnpm preview --port ${PORT} --strictPort`,
     url: baseURL,
     reuseExistingServer: !process.env.CI,
