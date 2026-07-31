@@ -28,7 +28,19 @@ export function Figure({ title, summary, columns, rows, children, action }: Prop
         {action}
       </figcaption>
 
-      <div className="overflow-x-auto">{children}</div>
+      {/*
+        Ce conteneur peut défiler horizontalement sur les petits écrans (la
+        heatmap fait 53 colonnes). Un `tabindex` le rend atteignable au clavier :
+        sans lui, son contenu n'est accessible qu'à la souris. WCAG 2.1.1.
+      */}
+      <div
+        className="focus-visible:outline-ink-300 overflow-x-auto rounded focus-visible:outline-2 focus-visible:outline-offset-4"
+        tabIndex={0}
+        role="group"
+        aria-label={`${title} — graphique défilant`}
+      >
+        {children}
+      </div>
 
       <table className="sr-only">
         <caption>
