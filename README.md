@@ -105,6 +105,11 @@ lisible au lecteur d'écran — ce qu'aucune bibliothèque de charts en canvas n
 
 Chrome 111+, Firefox 128+, Safari 16.4+.
 
+## Pas encore fait
+
+- **Interface en anglais** — le réglage `locale` existe déjà dans le schéma mais n'est pas branché
+  sur les textes ([#4](https://github.com/maxgfr/basilico/issues/4)).
+
 ## Contribuer
 
 Les issues et les pull requests sont bienvenues — voir [CONTRIBUTING.md](CONTRIBUTING.md).
