@@ -14,6 +14,9 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     globals: true,
+    // Les specs Playwright vivent dans e2e/ et n'ont rien à faire ici : Vitest 4
+    // a resserré ses exclusions par défaut et les ramasserait sinon.
+    exclude: ['node_modules/**', 'dist/**', 'e2e/**'],
     setupFiles: ['./src/test/setup.ts'],
     coverage: {
       provider: 'v8',

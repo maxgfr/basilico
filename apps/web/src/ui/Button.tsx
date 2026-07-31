@@ -1,0 +1,31 @@
+import type { ButtonHTMLAttributes } from 'react'
+
+type Variant = 'primary' | 'secondary' | 'ghost' | 'danger'
+type Size = 'sm' | 'md' | 'lg'
+
+const BASE =
+  'inline-flex items-center justify-center gap-2 rounded-lg font-medium transition-colors duration-150 ' +
+  'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current ' +
+  'disabled:cursor-not-allowed disabled:opacity-40 motion-reduce:transition-none'
+
+const VARIANTS: Record<Variant, string> = {
+  primary: 'bg-ink-100 text-ink-950 hover:bg-white active:bg-ink-300',
+  secondary: 'bg-ink-800 text-ink-100 hover:bg-ink-600/60 active:bg-ink-800',
+  ghost: 'text-ink-300 hover:bg-ink-900 hover:text-ink-100 active:bg-ink-800',
+  danger: 'text-red-300 hover:bg-red-950/60 hover:text-red-200 active:bg-red-950',
+}
+
+const SIZES: Record<Size, string> = {
+  sm: 'h-8 px-3 text-sm',
+  md: 'h-10 px-4 text-sm',
+  lg: 'h-12 px-8 text-base',
+}
+
+type Props = ButtonHTMLAttributes<HTMLButtonElement> & {
+  variant?: Variant
+  size?: Size
+}
+
+export function Button({ variant = 'secondary', size = 'md', className = '', ...rest }: Props) {
+  return <button className={`${BASE} ${VARIANTS[variant]} ${SIZES[size]} ${className}`} {...rest} />
+}

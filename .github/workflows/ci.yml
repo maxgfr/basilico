@@ -25,3 +25,36 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm test
       - run: pnpm build
+
+  # Job séparé : un flake Playwright ne doit pas masquer une erreur de type.
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - id: pw
+        run: echo "v=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache@v4
+        id: pwcache
+        with:
+          path: ~/.cache/ms-playwright
+          # Clé exacte, sans restore-keys : un hit partiel installerait la
+          # mauvaise révision de navigateur.
+          key: playwright-${{ runner.os }}-${{ steps.pw.outputs.v }}
+      - if: steps.pwcache.outputs.cache-hit != 'true'
+        run: pnpm --filter @basilico/web exec playwright install --with-deps chromium
+      - if: steps.pwcache.outputs.cache-hit == 'true'
+        # Les bibliothèques système vivent hors du cache : à réinstaller même sur un hit.
+        run: pnpm --filter @basilico/web exec playwright install-deps chromium
+      - run: pnpm --filter @basilico/web e2e
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: playwright-report
+          path: apps/web/playwright-report/
+          retention-days: 7
