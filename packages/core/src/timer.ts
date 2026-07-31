@@ -5,6 +5,8 @@ import { plannedMsFor, type Settings } from './settings'
  * Past this much lateness we stop auto-starting the next phase: the tab was
  * closed or frozen, and picking up a break that was due an hour ago makes no
  * sense. The app shows "ended X ago" and hands control back.
+ *
+ * Unless the cycle is set to never stop on its own — see `closePhase`.
  */
 export const CATCH_UP_GRACE_MS = 60_000
 
@@ -240,11 +242,18 @@ function closePhase(
   }
 
   const autoStart = next === 'focus' ? ctx.settings.autoStartFocus : ctx.settings.autoStartBreaks
+  // "Never stop on its own" means exactly that: an absence is not a reason to
+  // break the cycle, only an explicit stop is.
+  const endless = ctx.settings.autoStartBreaks && ctx.settings.autoStartFocus
   const lateBy = Math.max(0, ctx.now - endedAt)
-  // We only chain when the end just happened: resuming a break that was due an
-  // hour ago would hand the user an already-finished timer.
-  if (autoStart && lateBy <= CATCH_UP_GRACE_MS) {
-    const started = startPhase(idle, ctx, { at: endedAt, intention: null })
+  const justEnded = lateBy <= CATCH_UP_GRACE_MS
+
+  if (autoStart && (justEnded || endless)) {
+    // A phase that just ended chains from its own end, so the cycle stays
+    // aligned. One resumed after an absence starts *now* instead — dating it
+    // back would hand over an already-expired phase, and the next tick would
+    // close that one too, and the one after it.
+    const started = startPhase(idle, ctx, { at: justEnded ? endedAt : ctx.now, intention: null })
     return { state: started, events: [...events, { type: 'phase-started', mode: next }] }
   }
 

@@ -131,10 +131,7 @@ describe('session notes', () => {
     render(<App />)
 
     await user.click(screen.getByRole('button', { name: 'Start' }))
-    // Voiding now lives behind the interruption menu, where each action carries
-    // its own explanation instead of a paragraph pinned under the timer.
-    await user.click(screen.getByRole('button', { name: /Interrupted\?/ }))
-    await user.click(screen.getByRole('button', { name: /Void this session/ }))
+    await user.click(screen.getByRole('button', { name: 'Void this session' }))
 
     await user.click(screen.getByRole('radio', { name: '4 out of 5' }))
     await user.type(screen.getByLabelText('Session note'), 'Kept getting pinged')

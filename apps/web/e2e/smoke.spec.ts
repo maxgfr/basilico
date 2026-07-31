@@ -41,7 +41,7 @@ test('state survives a reload and time keeps running', async ({ page }) => {
   await expect(page.getByRole('button', { name: 'Pause' })).toBeVisible()
 })
 
-test('a session that ended while away is caught up', async ({ page }) => {
+test('a session that ended while away is caught up, and the cycle carries on', async ({ page }) => {
   await page.getByRole('button', { name: 'Start' }).click()
 
   // Forty minutes pass: the session ended at its deadline, fifteen minutes ago.
@@ -49,8 +49,12 @@ test('a session that ended while away is caught up', async ({ page }) => {
 
   await expect(page.getByText(/ended/)).toBeVisible()
   await expect(page.getByText(/15 minutes ago/)).toBeVisible()
-  // Nothing chained on its own: the break waits for a decision.
-  await expect(page.getByRole('button', { name: 'Start' })).toBeVisible()
+
+  // The cycle is set to never stop on its own, so an absence doesn't break it:
+  // the break is already running, started on return rather than back-dated.
+  await expect(page.getByRole('button', { name: 'Pause' })).toBeVisible()
+  await expect(page.getByRole('timer')).toHaveAccessibleName(/Short break/)
+  await expect(page.getByRole('timer')).toContainText('04:5')
 
   // And the message survives a reload: the person who closed their tab is
   // precisely the one who needs to read it.
@@ -152,7 +156,8 @@ test('the interruption menu explains itself and closes politely', async ({ page 
 
   // Each action states what it does, rather than a paragraph pinned to the page.
   await expect(menu).toContainText('the session survives')
-  await expect(menu).toContainText('The time still counts in your stats')
+  // Voiding is not in here: it ends the session rather than annotating it.
+  await expect(menu.getByText('Void this session')).toHaveCount(0)
 
   await page.getByRole('button', { name: /Someone interrupted me/ }).click()
   await expect(trigger).toContainText('1')

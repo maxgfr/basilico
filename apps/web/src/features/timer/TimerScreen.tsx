@@ -23,6 +23,7 @@ export function TimerScreen() {
   const lastEnded = useApp((s) => s.lastEnded)
   const toggle = useApp((s) => s.toggle)
   const skipPhase = useApp((s) => s.skipPhase)
+  const voidPhase = useApp((s) => s.voidPhase)
   const resetPhase = useApp((s) => s.resetPhase)
   const dismissEnded = useApp((s) => s.dismissEnded)
 
@@ -112,6 +113,24 @@ export function TimerScreen() {
         )}
         <InterruptionMenu />
       </div>
+
+      {/*
+        Voiding sits on its own line rather than in the control row or inside the
+        interruption menu. It ends the session instead of annotating it, so it is
+        neither a sibling of Pause nor a third kind of interruption — and an
+        action that discards a pomodoro should take a deliberate look to find.
+      */}
+      {timer.mode === 'focus' && timer.status !== 'idle' && (
+        <div className="flex flex-col items-center gap-1">
+          <Button variant="danger" size="sm" onClick={() => voidPhase(Date.now())}>
+            Void this session
+          </Button>
+          <p className="text-ink-600 max-w-xs text-center text-xs">
+            For when the interruption won. The time still counts in your stats; the pomodoro
+            doesn’t.
+          </p>
+        </div>
+      )}
 
       {pip.window && <PipTimer target={pip.window} />}
 

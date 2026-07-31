@@ -3,20 +3,21 @@ import { useApp } from '../../store/app'
 import { Button } from '../../ui/Button'
 
 /**
- * Interruptions and voiding, gathered behind one trigger.
+ * The two ways a session survives an interruption, behind one trigger.
  *
- * These used to sit permanently under the timer: three buttons and a paragraph
- * of explanation, on a screen whose entire job is to be quiet. And it still
- * didn't land — people asked what "void" meant anyway. Explaining a control in
- * prose beside it is the tell that the control isn't self-explanatory.
+ * These used to sit permanently under the timer with a paragraph of explanation,
+ * on a screen whose entire job is to be quiet — and it still didn't land, people
+ * asked what the controls meant anyway. Explaining a control in prose beside it
+ * is the tell that the control isn't self-explanatory, so each action now
+ * carries its own one-line meaning, read as you reach for it.
  *
- * So each action now carries its own one-line meaning, read at the moment you
- * reach for it, and the timer screen goes back to being a timer.
+ * Voiding lives outside this menu: it ends the session rather than annotating
+ * it, and burying an action of that weight one level down made it read like a
+ * third kind of interruption.
  */
 export function InterruptionMenu() {
   const timer = useApp((s) => s.timer)
   const interrupt = useApp((s) => s.interrupt)
-  const voidPhase = useApp((s) => s.voidPhase)
 
   const [open, setOpen] = useState(false)
   const [top, setTop] = useState(0)
@@ -99,18 +100,6 @@ export function InterruptionMenu() {
             count={timer.interruptions.external}
             onClick={() => interrupt('external')}
           />
-
-          <hr className="border-ink-800 my-2" />
-
-          <MenuItem
-            danger
-            label="Void this session"
-            meaning="For when it didn’t survive. The time still counts in your stats; the pomodoro doesn’t."
-            onClick={() => {
-              voidPhase(Date.now())
-              setOpen(false)
-            }}
-          />
         </div>
       )}
     </div>
@@ -121,13 +110,11 @@ function MenuItem({
   label,
   meaning,
   count,
-  danger = false,
   onClick,
 }: {
   label: string
   meaning: string
   count?: number
-  danger?: boolean
   onClick: () => void
 }) {
   return (
@@ -137,7 +124,7 @@ function MenuItem({
       className="hover:bg-ink-900 focus-visible:outline-ink-300 block w-full rounded-lg px-3 py-2 text-left transition-colors duration-150 focus-visible:outline-2 motion-reduce:transition-none"
     >
       <span className="flex items-center justify-between gap-3">
-        <span className={`text-sm ${danger ? 'text-danger' : ''}`}>{label}</span>
+        <span className="text-sm">{label}</span>
         {count !== undefined && count > 0 && (
           <span className="text-ink-600 tabular text-xs">{count}</span>
         )}

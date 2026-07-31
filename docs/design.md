@@ -133,6 +133,22 @@ the `#` convention is one people already know. A session freezes its task's tag 
 reading it back from the task later would silently rewrite months of history the first time someone
 retags something.
 
+## An endless cycle means endless
+
+With "never stop on its own" set — the default — the timer chains focus, break,
+focus, break, and only an explicit stop ends it. An absence is not an explicit
+stop, so coming back to a session that ended an hour ago no longer leaves the
+timer idle: it resumes.
+
+The one thing that cannot happen is inventing work. A phase resumed after an
+absence starts **now**, never back-dated to the old deadline — dating it back
+would hand over an already-expired phase, and the next tick would close that one
+too, and the one after it. The banner still reports the session that really
+ended, and when.
+
+Turn the setting off and the old behaviour returns: past a minute of lateness the
+timer stops and hands control back, because you did not ask it to keep going.
+
 ## Two sheets, not one list
 
 Cirillo works with an **activity inventory** — everything you might do — and a **to-do-today sheet**

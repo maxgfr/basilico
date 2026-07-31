@@ -125,10 +125,35 @@ describe('session end and chaining', () => {
     expect(result.state.startedAt).toBe(T0 + 25 * MIN)
   })
 
-  it('does not chain a break that has been due for too long', () => {
-    const result = advance(running(), ctxAt(T0 + 25 * MIN + CATCH_UP_GRACE_MS + 1))
+  it('hands control back when a break has been due for too long', () => {
+    // Endless off: coming back to a break that was due an hour ago should not
+    // hand over a timer that already expired.
+    const settings = { autoStartFocus: false } as const
+    const late = T0 + 25 * MIN + CATCH_UP_GRACE_MS + 1
+    const result = advance(running(settings), ctxAt(late, settings))
     expect(result.state.mode).toBe('shortBreak')
     expect(result.state.status).toBe('idle')
+  })
+
+  it('keeps the cycle running after an absence when it must never stop', () => {
+    // Endless is the default: an absence is not a reason to break the cycle,
+    // only an explicit stop is.
+    const late = T0 + 3 * 60 * MIN
+    const result = advance(running(), ctxAt(late))
+
+    expect(result.state.status).toBe('running')
+    expect(result.state.mode).toBe('shortBreak')
+    // Started now, not back-dated: dating it to the old end would hand over an
+    // already-expired phase, and the next tick would close that one too.
+    expect(result.state.startedAt).toBe(late)
+    expect(remainingMs(result.state, late)).toBe(5 * MIN)
+  })
+
+  it('still reports how late the finished session was', () => {
+    const late = T0 + 3 * 60 * MIN
+    const ended = advance(running(), ctxAt(late)).events.find((e) => e.type === 'session-ended')
+    // The banner needs this even though the cycle carried on without us.
+    expect(ended?.type === 'session-ended' && ended.lateByMs).toBe(155 * MIN)
   })
 
   it('gives a long break every four focus sessions', () => {
