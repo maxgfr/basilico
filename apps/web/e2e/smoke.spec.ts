@@ -156,17 +156,38 @@ test('the interruption menu explains itself and closes politely', async ({ page 
 
   // Each action states what it does, rather than a paragraph pinned to the page.
   await expect(menu).toContainText('the session survives')
-  // Voiding is not in here: it ends the session rather than annotating it.
-  await expect(menu.getByText('Void this session')).toHaveCount(0)
+  // Abandoning is not in here: it ends the session rather than annotating it.
+  await expect(menu.getByText('Abandon this one')).toHaveCount(0)
 
   await page.getByRole('button', { name: /Someone interrupted me/ }).click()
   await expect(trigger).toContainText('1')
-  // Counting an interruption must not end the session — that's what voiding is for.
+  // Counting an interruption must not end the session — abandoning is for that.
   await expect(page.getByRole('button', { name: 'Pause' })).toBeVisible()
 
   await page.keyboard.press('Escape')
   await expect(menu).toBeHidden()
   await expect(trigger).toBeFocused()
+})
+
+test('the cycle never hands control back on its own', async ({ page }) => {
+  // The reported bug: Start, then Skip twice, and the timer sat on "Start".
+  await page.getByRole('button', { name: 'Start' }).click()
+
+  for (const mode of ['Short break', 'Focus', 'Short break', 'Focus']) {
+    await page.getByRole('button', { name: 'Skip' }).click()
+    // The phase advanced *and* it is running: "Pause" is only shown when it is.
+    await expect(page.getByRole('timer')).toHaveAttribute('aria-label', new RegExp(`^${mode},`))
+    await expect(page.getByRole('button', { name: 'Pause' })).toBeVisible()
+  }
+})
+
+test('a focus session can be ended by hand and still count', async ({ page }) => {
+  await page.getByRole('button', { name: 'Start' }).click()
+  await page.getByRole('button', { name: 'Done — count it' }).click()
+
+  // It chains straight into the break, and the pomodoro is on the board.
+  await expect(page.getByRole('button', { name: 'Pause' })).toBeVisible()
+  await expect(page.getByText('How did that session go?')).toBeVisible()
 })
 
 test('today and the backlog are two different lists', async ({ page }, testInfo) => {

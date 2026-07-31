@@ -133,6 +133,38 @@ the `#` convention is one people already know. A session freezes its task's tag 
 reading it back from the task later would silently rewrite months of history the first time someone
 retags something.
 
+## Four ways a session ends, and what each one costs
+
+A session carries an outcome, and the vocabulary has to make the consequence
+obvious _before_ the click, because the log is append-only and none of it can be
+taken back.
+
+| Action      | Recorded    | Time in stats | Pomodoro |
+| ----------- | ----------- | ------------- | -------- |
+| runs out    | `completed` | yes           | yes      |
+| **Done**    | `completed` | yes           | yes      |
+| **Abandon** | `voided`    | yes           | no       |
+| **Skip**    | `skipped`   | yes           | no       |
+| **Reset**   | nothing     | —             | no       |
+
+The one that used to be missing is **Done**. Without it the only manual exit from
+a focus session was the one that threw the pomodoro away — which read as "end the
+session" and quietly cost you the credit — and in flowtime, where a focus phase
+has no deadline to run out, _no pomodoro could ever be completed at all_: no
+streak, no task credit, an empty Open Pomodoro export.
+
+It is deliberately possible to press Done early, which Cirillo's indivisible
+pomodoro forbids. Flowtime leaves no alternative, and the record keeps the real
+`actualMs`, so the durations and the estimate accuracy stay honest either way.
+
+**Abandon** was called "void". The word is precise and nobody used it that way:
+people read it as "end this session", which is exactly what it does — the part
+they missed is the pomodoro it costs. Only the label changed; the stored outcome
+is still `voided`, because it is in every export ever written.
+
+**Reset** is the one that records nothing, and so the one real exit from the
+cycle below.
+
 ## An endless cycle means endless
 
 With "never stop on its own" set — the default — the timer chains focus, break,
@@ -148,6 +180,24 @@ ended, and when.
 
 Turn the setting off and the old behaviour returns: past a minute of lateness the
 timer stops and hands control back, because you did not ask it to keep going.
+
+That setting governs what the timer does **unattended**, and nothing else. A
+phase you end yourself — Done, Abandon, Skip — always hands over the next one
+running, whatever the setting says: pressing "skip to the next phase" _is_ the
+request to carry on, and answering it with an idle timer is just a second click
+demanded for a decision already made. `reset` is what stops the cycle, and it is
+the one action that records nothing.
+
+The distinction is a `manual` / `elapsed` intent passed into `closePhase`, not a
+reading of the settings at the call site: the two callers, `finish` and
+`advance`, are exactly the two cases.
+
+This was a real bug, and a nastier one than it looked. The default for
+`autoStartFocus` was flipped to `true` without bumping the settings version —
+and stored settings are merged _over_ the defaults, so every profile written
+before the flip kept `false` for good. Start, skip, skip, and the timer sat there
+on "Start". Hence both halves of the fix: the intent above, and a `1 → 2`
+migration repairing that exact pair.
 
 ## Two sheets, not one list
 

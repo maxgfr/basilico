@@ -64,6 +64,7 @@ type AppState = {
   setIntention: (intention: string | null) => void
   resetPhase: (now: number) => void
   skipPhase: (now: number) => void
+  donePhase: (now: number) => void
   voidPhase: (now: number) => void
   interrupt: (kind: InterruptionKind) => void
   dismissEnded: () => void
@@ -157,11 +158,16 @@ export const useApp = create<AppState>()(
           const { timer, startNow } = get()
           if (timer.status === 'idle') return startNow(now)
           if (timer.status === 'paused') return set({ timer: resume(timer, ctx(now)) })
+          // Past the deadline the button reads "Stop", and it has to actually
+          // stop: pausing an overtime session leaves it open with no way to
+          // close it as done, which is the state flowtime lives in permanently.
+          if (timer.status === 'overtime') return commit(finish(timer, ctx(now), 'completed'))
           set({ timer: pause(timer, ctx(now)) })
         },
 
         resetPhase: (now) => set({ timer: resetCore(get().timer, ctx(now)), lastEnded: null }),
         skipPhase: (now) => commit(finish(get().timer, ctx(now), 'skipped')),
+        donePhase: (now) => commit(finish(get().timer, ctx(now), 'completed')),
         voidPhase: (now) => commit(finish(get().timer, ctx(now), 'voided')),
 
         interrupt: (kind) => set({ timer: addInterruption(get().timer, kind) }),

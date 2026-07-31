@@ -131,7 +131,7 @@ describe('session notes', () => {
     render(<App />)
 
     await user.click(screen.getByRole('button', { name: 'Start' }))
-    await user.click(screen.getByRole('button', { name: 'Void this session' }))
+    await user.click(screen.getByRole('button', { name: 'Abandon this one' }))
 
     await user.click(screen.getByRole('radio', { name: '4 out of 5' }))
     await user.type(screen.getByLabelText('Session note'), 'Kept getting pinged')
@@ -141,6 +141,63 @@ describe('session notes', () => {
     expect(logged?.rating).toBe(4)
     expect(logged?.note).toBe('Kept getting pinged')
     expect(logged?.outcome).toBe('voided')
+  })
+
+  it('offers the same note panel after a session ended with Done', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+
+    await user.click(screen.getByRole('button', { name: 'Start' }))
+    await user.click(screen.getByRole('button', { name: 'Done — count it' }))
+
+    await user.click(screen.getByRole('radio', { name: '5 out of 5' }))
+
+    const logged = useApp.getState().sessions.at(-1)
+    expect(logged?.outcome).toBe('completed')
+    expect(logged?.rating).toBe(5)
+  })
+})
+
+describe('ending a session by hand', () => {
+  it('counts the pomodoro and credits the active task', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+
+    await user.type(screen.getByLabelText('Task title'), 'Write the core')
+    await user.click(screen.getByRole('button', { name: 'Add' }))
+    await user.click(screen.getByRole('button', { name: 'Write the core' }))
+
+    await user.click(screen.getByRole('button', { name: 'Start' }))
+    await user.click(screen.getByRole('button', { name: 'Done — count it' }))
+
+    const state = useApp.getState()
+    expect(state.sessions.at(-1)?.outcome).toBe('completed')
+    expect(state.timer.focusSinceLongBreak).toBe(1)
+    expect(state.tasks.at(0)?.completedPomodoros).toBe(1)
+  })
+
+  it('abandoning records the time without counting a pomodoro', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+
+    await user.click(screen.getByRole('button', { name: 'Start' }))
+    await user.click(screen.getByRole('button', { name: 'Abandon this one' }))
+
+    const state = useApp.getState()
+    expect(state.sessions.at(-1)?.outcome).toBe('voided')
+    expect(state.timer.focusSinceLongBreak).toBe(0)
+  })
+
+  // The reported bug: the cycle stopped dead on the second skip.
+  it('keeps chaining phases however many times you skip', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+
+    await user.click(screen.getByRole('button', { name: 'Start' }))
+    for (let i = 0; i < 5; i++) {
+      await user.click(screen.getByRole('button', { name: 'Skip' }))
+      expect(useApp.getState().timer.status).toBe('running')
+    }
   })
 })
 

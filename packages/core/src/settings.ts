@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-export const SETTINGS_VERSION = 1
+export const SETTINGS_VERSION = 2
 
 /**
  * A preset only sets the durations: everything else stays as the user left it.
@@ -100,6 +100,15 @@ export function mergeSettings<T>(base: T, patch: unknown): T {
 const migrations: Record<number, (input: Plain) => Plain> = {
   // 0 → 1: first published version, nothing to transform.
   0: (input) => input,
+  // 1 → 2: `autoStartFocus` became `true` by default, but without a version bump
+  // — and stored settings are merged *over* the defaults, so profiles written
+  // before that kept the old `false` for good and watched the cycle stop after
+  // every break. Repair only that exact pair, which is the old default and
+  // nothing a user picked: the two sub-toggles let anyone set it again after.
+  1: (input) =>
+    input.autoStartBreaks === true && input.autoStartFocus === false
+      ? { ...input, autoStartFocus: true }
+      : input,
 }
 
 /**

@@ -119,13 +119,13 @@ export function StatsScreen() {
           rows={[
             ['Internal', String(stats.all.interruptions.internal)],
             ['External', String(stats.all.interruptions.external)],
-            ['Voided focus sessions', String(stats.all.voidedFocus)],
+            ['Abandoned focus sessions', String(stats.all.voidedFocus)],
           ]}
         >
           <dl aria-hidden="true" className="grid grid-cols-3 gap-4 pt-2">
             <Metric label="Internal" value={stats.all.interruptions.internal} />
             <Metric label="External" value={stats.all.interruptions.external} />
-            <Metric label="Voided" value={stats.all.voidedFocus} />
+            <Metric label="Abandoned" value={stats.all.voidedFocus} />
           </dl>
           <p className="text-ink-600 mt-4 text-xs">
             Internal ones come from you, external ones from other people. Counting them is the first

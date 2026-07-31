@@ -24,6 +24,9 @@ export type TimerEvent =
 
 export type TimerResult = { state: TimerState; events: TimerEvent[] }
 
+/** Who ended a phase: the user (`manual`) or its own deadline (`elapsed`). */
+type CloseIntent = 'manual' | 'elapsed'
+
 export function createTimerState(settings: Settings): TimerState {
   return {
     status: 'idle',
@@ -205,12 +208,16 @@ function buildRecord(
  * `endedAt` is the real end time, which is not necessarily `now`: if the tab was
  * frozen, the session ended at its deadline, not when we noticed. That's the
  * whole catch-up logic.
+ *
+ * `intent` says who ended it. The auto-start settings describe what the timer
+ * may do *on its own*; they have no say over a phase the user ended by hand.
  */
 function closePhase(
   state: TimerState,
   ctx: TimerContext,
   endedAt: number,
   outcome: SessionOutcome,
+  intent: CloseIntent,
 ): TimerResult {
   const record = buildRecord(state, ctx, endedAt, outcome)
   const events: TimerEvent[] = [
@@ -241,7 +248,16 @@ function closePhase(
     intention: null,
   }
 
-  const autoStart = next === 'focus' ? ctx.settings.autoStartFocus : ctx.settings.autoStartBreaks
+  // Asking for the next phase by hand *is* the explicit request to carry on, so
+  // the auto-start settings don't get a vote: they only govern what the timer
+  // does unattended. `reset` stays the way out of the cycle — it is the one
+  // action that records nothing.
+  const autoStart =
+    intent === 'manual'
+      ? true
+      : next === 'focus'
+        ? ctx.settings.autoStartFocus
+        : ctx.settings.autoStartBreaks
   // "Never stop on its own" means exactly that: an absence is not a reason to
   // break the cycle, only an explicit stop is.
   const endless = ctx.settings.autoStartBreaks && ctx.settings.autoStartFocus
@@ -260,10 +276,13 @@ function closePhase(
   return { state: idle, events }
 }
 
-/** Ends the current phase now: skip it (`skipped`) or void it (`voided`). */
+/**
+ * Ends the current phase now, by hand: count it (`completed`), abandon it
+ * (`voided`) or skip it (`skipped`).
+ */
 export function finish(state: TimerState, ctx: TimerContext, outcome: SessionOutcome): TimerResult {
   if (state.status === 'idle') return { state, events: [] }
-  return closePhase(state, ctx, ctx.now, outcome)
+  return closePhase(state, ctx, ctx.now, outcome, 'manual')
 }
 
 /**
@@ -285,5 +304,5 @@ export function advance(state: TimerState, ctx: TimerContext): TimerResult {
     }
   }
 
-  return closePhase(state, ctx, state.endsAt, 'completed')
+  return closePhase(state, ctx, state.endsAt, 'completed', 'elapsed')
 }

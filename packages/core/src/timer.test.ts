@@ -158,21 +158,42 @@ describe('session end and chaining', () => {
 
   it('gives a long break every four focus sessions', () => {
     let state = running()
-    let ctx = ctxAt(T0)
     const modes: string[] = []
 
     for (let i = 0; i < 4; i++) {
       const at = (state.endsAt ?? 0) + 1
-      ctx = ctxAt(at)
-      const result = advance(state, ctx)
-      state = result.state
+      state = advance(state, ctxAt(at)).state
       modes.push(state.mode)
-      // Skip the break to get back to a focus session.
-      const skipped = finish(state, ctxAt(at + 1), 'skipped')
-      state = startPhase(skipped.state, ctxAt(at + 2))
+      // Skipping the break hands the next focus back already running.
+      state = finish(state, ctxAt(at + 1), 'skipped').state
     }
 
     expect(modes).toEqual(['shortBreak', 'shortBreak', 'shortBreak', 'longBreak'])
+  })
+
+  it('chains the next phase on an explicit skip, whatever the auto-start settings', () => {
+    // The reported bug: Start, Skip, Skip and the timer sat there on "Start".
+    // Asking for the next phase by hand *is* the request to carry on; the
+    // auto-start settings only govern what happens unattended.
+    const settings = { autoStartBreaks: false, autoStartFocus: false } as const
+    let state = running(settings)
+
+    state = finish(state, ctxAt(T0 + MIN, settings), 'skipped').state
+    expect(state.mode).toBe('shortBreak')
+    expect(state.status).toBe('running')
+
+    state = finish(state, ctxAt(T0 + 2 * MIN, settings), 'skipped').state
+    expect(state.mode).toBe('focus')
+    expect(state.status).toBe('running')
+  })
+
+  it('counts the pomodoro when a focus session is ended by hand', () => {
+    const result = finish(running(), ctxAt(T0 + 20 * MIN), 'completed')
+    expect(endedRecords(result.events)[0]?.outcome).toBe('completed')
+    expect(result.state.focusSinceLongBreak).toBe(1)
+    // And the break it hands over is a real one, not an idle placeholder.
+    expect(result.state.mode).toBe('shortBreak')
+    expect(result.state.status).toBe('running')
   })
 
   it('resets the counter after the long break', () => {

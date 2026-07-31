@@ -18,7 +18,7 @@ the reports, and being able to get your data back out. That's where basilico put
 |                              |                                                                                                                                                                                                        |
 | ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | **Stats**                    | A year-long heatmap, your streak, time per task and per tag, the hours you're actually productive, and how accurate your estimates are — Cirillo's third objective, which almost no tool reports back. |
-| **Interruptions**            | Counted the way the original method does: internal (`'`) and external (`-`). A focus session you truly abandon is voided, not counted as half a pomodoro.                                              |
+| **Interruptions**            | Counted the way the original method does: internal (`'`) and external (`-`). A focus session you truly abandon keeps its time but not its pomodoro — never counted as half a one.                      |
 | **Overtime and Flowtime**    | The counter can run past zero, or run as a free stopwatch with a break sized from what you worked. For people whose flow a hard stop at 25 minutes breaks.                                             |
 | **Adjustable display**       | Exact, rough ("about 24 minutes"), percentage, or hidden. Watching seconds tick down makes a lot of people anxious.                                                                                    |
 | **Endless by default**       | Focus, break, focus, break — the cycle only ends when you end it. Even coming back after an absence picks it back up.                                                                                  |
@@ -45,6 +45,9 @@ These are the usual complaints about web-based timers. Better said upfront.
   storage for sites you haven't visited in 7 days. The app asks for persistent storage and offers a
   one-click export — use it.
 - **No sync.** One browser, one history. Export and import to move to another machine.
+- **The extension always rings the same alarm.** It runs its own offscreen audio, and the protocol
+  only carries the deadline — so the alarm and volume you picked in the app apply to the tab, not to
+  the notification the extension fires once that tab is gone.
 
 ## Chrome extension
 

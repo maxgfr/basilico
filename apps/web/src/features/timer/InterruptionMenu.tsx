@@ -11,9 +11,9 @@ import { Button } from '../../ui/Button'
  * is the tell that the control isn't self-explanatory, so each action now
  * carries its own one-line meaning, read as you reach for it.
  *
- * Voiding lives outside this menu: it ends the session rather than annotating
- * it, and burying an action of that weight one level down made it read like a
- * third kind of interruption.
+ * Abandoning lives outside this menu: it ends the session rather than
+ * annotating it, and burying an action of that weight one level down made it
+ * read like a third kind of interruption.
  */
 export function InterruptionMenu() {
   const timer = useApp((s) => s.timer)

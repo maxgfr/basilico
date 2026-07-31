@@ -14,6 +14,7 @@ import { useNow } from './runtime'
 import { ActiveTaskBar } from '../tasks/ActiveTaskBar'
 import { PipTimer } from './PipTimer'
 import { usePictureInPicture } from '../../platform/pip'
+import { sound } from '../../platform/sound'
 import { IntentionField, SessionLog } from './SessionNotes'
 import { InterruptionMenu } from './InterruptionMenu'
 
@@ -23,6 +24,7 @@ export function TimerScreen() {
   const lastEnded = useApp((s) => s.lastEnded)
   const toggle = useApp((s) => s.toggle)
   const skipPhase = useApp((s) => s.skipPhase)
+  const donePhase = useApp((s) => s.donePhase)
   const voidPhase = useApp((s) => s.voidPhase)
   const resetPhase = useApp((s) => s.resetPhase)
   const dismissEnded = useApp((s) => s.dismissEnded)
@@ -86,7 +88,16 @@ export function TimerScreen() {
       </p>
 
       <div className="flex flex-wrap items-center justify-center gap-3">
-        <Button variant="primary" size="lg" onClick={() => toggle(Date.now())}>
+        <Button
+          variant="primary"
+          size="lg"
+          onClick={() => {
+            // The one reliable user gesture on the mouse path: without it the
+            // AudioContext is never created and no alarm can ever ring.
+            void sound.unlock()
+            toggle(Date.now())
+          }}
+        >
           {timer.status === 'idle' && 'Start'}
           {timer.status === 'running' && 'Pause'}
           {timer.status === 'overtime' && 'Stop'}
@@ -115,20 +126,38 @@ export function TimerScreen() {
       </div>
 
       {/*
-        Voiding sits on its own line rather than in the control row or inside the
-        interruption menu. It ends the session instead of annotating it, so it is
-        neither a sibling of Pause nor a third kind of interruption — and an
-        action that discards a pomodoro should take a deliberate look to find.
+        The two ways a focus session ends by hand, on their own line rather than
+        in the control row or inside the interruption menu: they end the session
+        instead of annotating it, so they are neither siblings of Pause nor a
+        third kind of interruption — and the one that throws a pomodoro away
+        should take a deliberate look to find.
+
+        "Done" is hidden in overtime, where the primary button already reads
+        "Stop" and does exactly this: two "end it and count it" actions on screen
+        at once is one too many.
       */}
       {timer.mode === 'focus' && timer.status !== 'idle' && (
-        <div className="flex flex-col items-center gap-1">
-          <Button variant="danger" size="sm" onClick={() => voidPhase(Date.now())}>
-            Void this session
-          </Button>
-          <p className="text-ink-600 max-w-xs text-center text-xs">
-            For when the interruption won. The time still counts in your stats; the pomodoro
-            doesn’t.
-          </p>
+        <div className="flex flex-col items-center gap-4">
+          {timer.status !== 'overtime' && (
+            <div className="flex flex-col items-center gap-1">
+              <Button variant="primary" size="sm" onClick={() => donePhase(Date.now())}>
+                Done — count it
+              </Button>
+              <p className="text-ink-600 max-w-xs text-center text-xs">
+                Ends the session now and counts the pomodoro, crediting the task.
+              </p>
+            </div>
+          )}
+
+          <div className="flex flex-col items-center gap-1">
+            <Button variant="danger" size="sm" onClick={() => voidPhase(Date.now())}>
+              Abandon this one
+            </Button>
+            <p className="text-ink-600 max-w-xs text-center text-xs">
+              For when the interruption won. The time still counts in your stats; the pomodoro
+              doesn’t.
+            </p>
+          </div>
         </div>
       )}
 
