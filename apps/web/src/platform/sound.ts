@@ -12,6 +12,11 @@
 
 export type AlarmName = 'chime' | 'bell' | 'blip'
 
+export const ALARMS: AlarmName[] = ['chime', 'bell', 'blip']
+
+/** A voice the scheduler may cancel, versus one that must be left to ring. */
+type VoiceTrack = 'cancellable' | 'oneshot'
+
 const PARTIALS: Record<AlarmName, { freq: number; at: number; length: number }[]> = {
   chime: [
     { freq: 880, at: 0, length: 1.4 },
@@ -50,11 +55,22 @@ class SoundPlayer {
     }
   }
 
-  private voice(name: AlarmName, at: number, volume: number) {
+  /**
+   * `track` decides whether `cancel()` may kill these voices.
+   *
+   * A previewed alarm must not be: choosing one in the settings writes the
+   * setting, which re-runs the scheduling effect, which cancels — a few hundred
+   * microseconds after the preview was scheduled ten milliseconds out. Stopping
+   * an oscillator before its start time means it never sounds at all, so the
+   * preview was silent every single time, and picking a sound looked broken.
+   */
+  private voice(name: AlarmName, at: number, volume: number, track: VoiceTrack) {
     const ctx = this.ctx
     if (!ctx) return
 
-    for (const partial of PARTIALS[name]) {
+    // The stored id is a plain string: an edited backup must not throw from
+    // inside a React effect.
+    for (const partial of PARTIALS[name] ?? PARTIALS.chime) {
       const osc = ctx.createOscillator()
       const gain = ctx.createGain()
       const start = at + partial.at
@@ -70,10 +86,12 @@ class SoundPlayer {
       gain.connect(ctx.destination)
       osc.start(start)
       osc.stop(start + partial.length + 0.05)
-      osc.addEventListener('ended', () => {
-        this.scheduled = this.scheduled.filter((o) => o !== osc)
-      })
-      this.scheduled.push(osc)
+      if (track === 'cancellable') {
+        osc.addEventListener('ended', () => {
+          this.scheduled = this.scheduled.filter((o) => o !== osc)
+        })
+        this.scheduled.push(osc)
+      }
     }
   }
 
@@ -81,12 +99,13 @@ class SoundPlayer {
   schedule(name: AlarmName, delayMs: number, volume: number): void {
     if (!this.ctx || volume <= 0) return
     this.cancel()
-    this.voice(name, this.ctx.currentTime + Math.max(0, delayMs) / 1000, volume)
+    this.voice(name, this.ctx.currentTime + Math.max(0, delayMs) / 1000, volume, 'cancellable')
   }
 
+  /** Plays one now and lets it finish: a preview, or the phase-end fallback. */
   playNow(name: AlarmName, volume: number): void {
     if (!this.ctx || volume <= 0) return
-    this.voice(name, this.ctx.currentTime + 0.01, volume)
+    this.voice(name, this.ctx.currentTime + 0.01, volume, 'oneshot')
   }
 
   /** Cancels a scheduled alarm: pause, reset, or ending the phase by hand. */

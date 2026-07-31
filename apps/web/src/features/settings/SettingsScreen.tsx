@@ -3,7 +3,7 @@ import { DURATION_PRESETS, applyPreset, type PresetName, type Settings } from '@
 import { useApp } from '../../store/app'
 import { Button } from '../../ui/Button'
 import { Choice, NumberField, OptionCards, Row, Section, StatusPill, Toggle } from '../../ui/Form'
-import { sound } from '../../platform/sound'
+import { ALARMS, sound } from '../../platform/sound'
 import { permissionState, requestPermission } from '../../platform/notifications'
 import type { AlarmName } from '../../platform/sound'
 import { SHORTCUTS } from '../timer/shortcuts'
@@ -32,6 +32,10 @@ export function SettingsScreen() {
   useEffect(() => {
     void navigator.storage?.persisted?.().then(setPersisted)
   }, [])
+
+  // At zero the player returns without a sound, so the preview would be a
+  // button that does nothing rather than one that says why.
+  const muted = settings.sound.volume <= 0
 
   const preset = (Object.keys(DURATION_PRESETS) as PresetName[]).find((name) => {
     const p = DURATION_PRESETS[name]
@@ -209,53 +213,64 @@ export function SettingsScreen() {
           checked={settings.sound.enabled}
           onChange={(enabled) => update({ sound: { ...settings.sound, enabled } })}
         />
-        <Row label="Alarm" hint="Pick one and hear it straight away.">
-          <div role="radiogroup" aria-label="Alarm" className="flex flex-wrap gap-2">
-            {(['chime', 'bell', 'blip'] as const).map((alarm) => (
-              <button
-                key={alarm}
-                type="button"
-                role="radio"
-                aria-checked={settings.sound.alarm === alarm}
-                onClick={() => {
-                  update({ sound: { ...settings.sound, alarm } })
-                  void sound.unlock().then(() => sound.playNow(alarm, settings.sound.volume))
-                }}
-                className={`rounded-lg border px-3 py-1.5 text-sm capitalize transition-colors duration-150 motion-reduce:transition-none ${
-                  settings.sound.alarm === alarm
-                    ? 'border-focus bg-ink-900 text-ink-100'
-                    : 'border-ink-800 text-ink-600 hover:border-ink-600 hover:text-ink-300'
-                }`}
-              >
-                {alarm}
-              </button>
-            ))}
-          </div>
-        </Row>
-        <Row label="Volume">
+        <Row
+          label="Alarm"
+          hint={
+            muted
+              ? 'The volume is at zero, so nothing will play.'
+              : 'Pick one and hear it straight away.'
+          }
+        >
           <div className="flex items-center gap-3">
-            <input
-              type="range"
-              min={0}
-              max={100}
-              value={Math.round(settings.sound.volume * 100)}
-              aria-label="Volume"
-              onChange={(e) =>
-                update({ sound: { ...settings.sound, volume: Number(e.target.value) / 100 } })
-              }
-              className="accent-focus w-32"
-            />
+            <div role="radiogroup" aria-label="Alarm" className="flex flex-wrap gap-2">
+              {ALARMS.map((alarm) => (
+                <button
+                  key={alarm}
+                  type="button"
+                  role="radio"
+                  aria-checked={settings.sound.alarm === alarm}
+                  onClick={() => {
+                    update({ sound: { ...settings.sound, alarm } })
+                    void sound.unlock().then(() => sound.playNow(alarm, settings.sound.volume))
+                  }}
+                  className={`rounded-lg border px-3 py-1.5 text-sm capitalize transition-colors duration-150 motion-reduce:transition-none ${
+                    settings.sound.alarm === alarm
+                      ? 'border-focus bg-ink-900 text-ink-100'
+                      : 'border-ink-800 text-ink-600 hover:border-ink-600 hover:text-ink-300'
+                  }`}
+                >
+                  {alarm}
+                </button>
+              ))}
+            </div>
+            {/* Next to the alarms rather than to the volume: it plays *this
+                sound*, and beside the slider everyone read it as a volume test. */}
             <Button
               size="sm"
+              aria-label="Play the alarm"
+              disabled={muted}
               onClick={() =>
                 void sound.unlock().then(() => {
                   sound.playNow(settings.sound.alarm as AlarmName, settings.sound.volume)
                 })
               }
             >
-              Test
+              Play
             </Button>
           </div>
+        </Row>
+        <Row label="Volume">
+          <input
+            type="range"
+            min={0}
+            max={100}
+            value={Math.round(settings.sound.volume * 100)}
+            aria-label="Volume"
+            onChange={(e) =>
+              update({ sound: { ...settings.sound, volume: Number(e.target.value) / 100 } })
+            }
+            className="accent-focus w-32"
+          />
         </Row>
         <Toggle
           label="Ticking"
