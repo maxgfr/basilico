@@ -15,6 +15,7 @@ import { ActiveTaskBar } from '../tasks/ActiveTaskBar'
 import { PipTimer } from './PipTimer'
 import { usePictureInPicture } from '../../platform/pip'
 import { IntentionField, SessionLog } from './SessionNotes'
+import { InterruptionMenu } from './InterruptionMenu'
 
 export function TimerScreen() {
   const timer = useApp((s) => s.timer)
@@ -23,8 +24,6 @@ export function TimerScreen() {
   const toggle = useApp((s) => s.toggle)
   const skipPhase = useApp((s) => s.skipPhase)
   const resetPhase = useApp((s) => s.resetPhase)
-  const voidPhase = useApp((s) => s.voidPhase)
-  const interrupt = useApp((s) => s.interrupt)
   const dismissEnded = useApp((s) => s.dismissEnded)
 
   const live = timer.status === 'running' || timer.status === 'overtime'
@@ -33,7 +32,6 @@ export function TimerScreen() {
 
   const remaining = remainingMs(timer, now)
   const elapsed = elapsedMs(timer, now)
-  const isFocus = timer.mode === 'focus'
   const isOvertime = timer.status === 'overtime'
   const countingUp = remaining === null
 
@@ -112,32 +110,10 @@ export function TimerScreen() {
             {pip.window ? 'Close floating window' : 'Floating window'}
           </Button>
         )}
+        <InterruptionMenu />
       </div>
 
       {pip.window && <PipTimer target={pip.window} />}
-
-      {isFocus && timer.status !== 'idle' && (
-        <div className="flex flex-col items-center gap-2">
-          <div className="flex flex-wrap items-center justify-center gap-2">
-            <span className="text-ink-600 text-xs">Interruption</span>
-            <Button variant="ghost" size="sm" onClick={() => interrupt('internal')}>
-              Internal{' '}
-              <span className="text-ink-600 tabular">{timer.interruptions.internal || ''}</span>
-            </Button>
-            <Button variant="ghost" size="sm" onClick={() => interrupt('external')}>
-              External{' '}
-              <span className="text-ink-600 tabular">{timer.interruptions.external || ''}</span>
-            </Button>
-          </div>
-          <p className="text-ink-600 max-w-sm text-center text-xs">
-            Logging an interruption doesn’t stop the timer. Voiding a focus session does: it won’t
-            count as a pomodoro, but the time you spent still shows up in your stats.
-          </p>
-          <Button variant="danger" size="sm" onClick={() => voidPhase(Date.now())}>
-            Void this focus
-          </Button>
-        </div>
-      )}
 
       <IntentionField />
       <SessionLog />

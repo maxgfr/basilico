@@ -141,3 +141,25 @@ test('switch knobs stay inside their track', async ({ page }) => {
     await toggle.click()
   }
 })
+
+test('the interruption menu explains itself and closes politely', async ({ page }) => {
+  await page.getByRole('button', { name: 'Start' }).click()
+
+  const trigger = page.getByRole('button', { name: /Interrupted\?/ })
+  await trigger.click()
+  const menu = page.getByRole('dialog', { name: 'Interruptions' })
+  await expect(menu).toBeVisible()
+
+  // Each action states what it does, rather than a paragraph pinned to the page.
+  await expect(menu).toContainText('the session survives')
+  await expect(menu).toContainText('The time still counts in your stats')
+
+  await page.getByRole('button', { name: /Someone interrupted me/ }).click()
+  await expect(trigger).toContainText('1')
+  // Counting an interruption must not end the session — that's what voiding is for.
+  await expect(page.getByRole('button', { name: 'Pause' })).toBeVisible()
+
+  await page.keyboard.press('Escape')
+  await expect(menu).toBeHidden()
+  await expect(trigger).toBeFocused()
+})

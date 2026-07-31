@@ -1,4 +1,4 @@
-import type { ButtonHTMLAttributes } from 'react'
+import type { ComponentProps } from 'react'
 
 type Variant = 'primary' | 'secondary' | 'ghost' | 'danger'
 type Size = 'sm' | 'md' | 'lg'
@@ -22,7 +22,9 @@ const SIZES: Record<Size, string> = {
   lg: 'h-12 px-8 text-base',
 }
 
-type Props = ButtonHTMLAttributes<HTMLButtonElement> & {
+// `ComponentProps<'button'>` rather than `ButtonHTMLAttributes`: React 19 hands
+// `ref` through as an ordinary prop, and only the former's type admits it.
+type Props = ComponentProps<'button'> & {
   variant?: Variant
   size?: Size
 }
