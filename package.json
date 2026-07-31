@@ -1,0 +1,27 @@
+{
+  "name": "basilico",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Un minuteur de focus open source, local-first, avec tâches, statistiques et alertes.",
+  "license": "MIT",
+  "packageManager": "pnpm@10.33.0",
+  "engines": {
+    "node": ">=22.12"
+  },
+  "scripts": {
+    "dev": "pnpm --filter @basilico/web dev",
+    "build": "pnpm --filter @basilico/web build",
+    "preview": "pnpm --filter @basilico/web preview",
+    "test": "pnpm -r test",
+    "typecheck": "pnpm -r typecheck",
+    "lint": "oxlint",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "devDependencies": {
+    "oxlint": "^1.76.0",
+    "prettier": "^3.9.6",
+    "typescript": "~6.0.3"
+  }
+}

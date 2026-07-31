@@ -1,0 +1,41 @@
+@import 'tailwindcss';
+
+/*
+ * Tailwind v4 : le thème vit ici, en CSS, il n'y a plus de tailwind.config.js.
+ * Une seule famille typographique (surface Operate), teinte porteuse par mode.
+ */
+@theme {
+  --color-ink-950: oklch(0.16 0.012 165);
+  --color-ink-900: oklch(0.21 0.014 165);
+  --color-ink-800: oklch(0.27 0.014 165);
+  --color-ink-600: oklch(0.52 0.012 165);
+  --color-ink-300: oklch(0.83 0.008 165);
+  --color-ink-100: oklch(0.95 0.006 165);
+
+  --color-focus: oklch(0.72 0.13 155);
+  --color-short: oklch(0.74 0.1 225);
+  --color-long: oklch(0.76 0.11 85);
+
+  --font-sans:
+    ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  background: var(--color-ink-950);
+  color: var(--color-ink-100);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Le compte à rebours ne doit jamais danser : chiffres à chasse fixe. */
+.tabular {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1;
+}
