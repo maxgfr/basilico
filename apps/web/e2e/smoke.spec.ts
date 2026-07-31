@@ -86,3 +86,28 @@ test('export then erase then import restores the state', async ({ page }) => {
     .click()
   await expect(page.getByText('Task to back up')).toBeVisible()
 })
+
+test('row actions are reachable on both pointer kinds', async ({ page }, testInfo) => {
+  await page.getByLabel('Task title').fill('Reachable task')
+  await page.getByRole('button', { name: 'Add' }).click()
+
+  const rename = page.getByRole('button', { name: 'Rename Reachable task' })
+  const more = page.getByRole('button', { name: 'Actions for Reachable task' })
+
+  if (testInfo.project.name === 'mobile') {
+    // No hover here, so a permanent disclosure is the only discoverable route.
+    // The earlier CSS-only attempt left the hover overlay in the DOM, where it
+    // reappeared on focus and swallowed this button's tap.
+    await expect(more).toBeVisible()
+    await expect(rename).toHaveCount(0)
+    await more.tap()
+    await expect(more).toHaveAttribute('aria-expanded', 'true')
+    await expect(rename).toBeVisible()
+  } else {
+    // A pointer device keeps the hover overlay and never shows the disclosure,
+    // so the same action is never announced twice.
+    await expect(more).toHaveCount(0)
+    await page.getByRole('listitem').filter({ hasText: 'Reachable task' }).hover()
+    await expect(rename).toBeVisible()
+  }
+})

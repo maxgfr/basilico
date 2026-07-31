@@ -3,6 +3,7 @@ import { knownTags, visibleTasks, type Task } from '@basilico/core'
 import { useApp } from '../../store/app'
 import { Button } from '../../ui/Button'
 import { Pomodoros } from './Pomodoros'
+import { useHoverCapable } from '../../platform/media'
 
 export function TaskList() {
   const tasks = useApp((s) => s.tasks)
@@ -93,13 +94,76 @@ type RowProps = {
   onActivate: () => void
 }
 
-function TaskRow({ task, index, count, active, onActivate }: RowProps) {
+/**
+ * The row's actions, rendered in two places: over the row on pointer devices,
+ * and inside a disclosure on touch ones. Same buttons, so they cannot drift.
+ */
+function RowActions({
+  task,
+  index,
+  count,
+  onEdit,
+}: {
+  task: Task
+  index: number
+  count: number
+  onEdit: () => void
+}) {
   const setStatus = useApp((s) => s.setStatus)
   const dropTask = useApp((s) => s.dropTask)
   const moveTask = useApp((s) => s.moveTask)
+
+  return (
+    <>
+      <Button
+        variant="ghost"
+        size="sm"
+        aria-label={`Move ${task.title} up`}
+        disabled={index === 0}
+        onClick={() => moveTask(task.id, index - 1)}
+      >
+        ↑
+      </Button>
+      <Button
+        variant="ghost"
+        size="sm"
+        aria-label={`Move ${task.title} down`}
+        disabled={index === count - 1}
+        onClick={() => moveTask(task.id, index + 1)}
+      >
+        ↓
+      </Button>
+      <Button variant="ghost" size="sm" aria-label={`Rename ${task.title}`} onClick={onEdit}>
+        Rename
+      </Button>
+      <Button
+        variant="ghost"
+        size="sm"
+        aria-label={`Archive ${task.title}`}
+        onClick={() => setStatus(task.id, 'archived', Date.now())}
+      >
+        Archive
+      </Button>
+      <Button
+        variant="danger"
+        size="sm"
+        aria-label={`Delete ${task.title}`}
+        onClick={() => dropTask(task.id)}
+      >
+        ✕
+      </Button>
+    </>
+  )
+}
+
+function TaskRow({ task, index, count, active, onActivate }: RowProps) {
+  const setStatus = useApp((s) => s.setStatus)
   const rename = useApp((s) => s.renameTask)
   const [editing, setEditing] = useState(false)
+  const [open, setOpen] = useState(false)
+  const hoverCapable = useHoverCapable()
   const isDone = task.status === 'done'
+  const panelId = `actions-${task.id}`
 
   // Focus moved by hand rather than with `autoFocus`: the attribute is a usability
   // problem when a page loads with it, but here the field only appears because
@@ -141,81 +205,77 @@ function TaskRow({ task, index, count, active, onActivate }: RowProps) {
 
   return (
     <li
-      className={`group relative flex items-center gap-3 rounded-lg px-3 py-2 transition-colors duration-150 ${
+      className={`group relative rounded-lg px-3 py-2 transition-colors duration-150 ${
         active ? 'bg-ink-900 ring-focus/40 ring-1' : 'hover:bg-ink-900'
       }`}
     >
-      <input
-        type="checkbox"
-        checked={isDone}
-        onChange={() => setStatus(task.id, isDone ? 'active' : 'done', Date.now())}
-        aria-label={isDone ? `Reopen ${task.title}` : `Complete ${task.title}`}
-        className="accent-focus size-4 shrink-0 cursor-pointer"
-      />
+      <div className="flex items-center gap-3">
+        <input
+          type="checkbox"
+          checked={isDone}
+          onChange={() => setStatus(task.id, isDone ? 'active' : 'done', Date.now())}
+          aria-label={isDone ? `Reopen ${task.title}` : `Complete ${task.title}`}
+          className="accent-focus size-4 shrink-0 cursor-pointer"
+        />
 
-      <button
-        type="button"
-        onClick={onActivate}
-        className="focus-visible:outline-ink-300 min-w-0 flex-1 text-left focus-visible:outline-2 focus-visible:outline-offset-2"
-        aria-pressed={active}
-      >
-        <span className={`block truncate text-sm ${isDone ? 'text-ink-600 line-through' : ''}`}>
-          {task.title}
-        </span>
-        {task.tag && <span className="text-ink-600 text-xs">#{task.tag}</span>}
-      </button>
+        <button
+          type="button"
+          onClick={onActivate}
+          className="focus-visible:outline-ink-300 min-w-0 flex-1 text-left focus-visible:outline-2 focus-visible:outline-offset-2"
+          aria-pressed={active}
+        >
+          <span className={`block truncate text-sm ${isDone ? 'text-ink-600 line-through' : ''}`}>
+            {task.title}
+          </span>
+          {task.tag && <span className="text-ink-600 text-xs">#{task.tag}</span>}
+        </button>
 
-      <Pomodoros done={task.completedPomodoros} estimated={task.estimatedPomodoros} />
+        <Pomodoros done={task.completedPomodoros} estimated={task.estimatedPomodoros} />
+
+        {/*
+          Touch devices have no hover, so the overlay would only ever appear after
+          tapping the row — reachable, but nobody would ever find it. They get a
+          permanent disclosure instead. Showing all five buttons inline was the
+          other option, and it clipped the titles all over again.
+        */}
+        {!hoverCapable && (
+          <button
+            type="button"
+            onClick={() => setOpen((v) => !v)}
+            aria-expanded={open}
+            aria-controls={panelId}
+            aria-label={`Actions for ${task.title}`}
+            className="text-ink-600 hover:text-ink-100 focus-visible:outline-ink-300 inline-flex h-8 w-7 shrink-0 items-center justify-center rounded-md text-lg leading-none focus-visible:outline-2"
+          >
+            ⋯
+          </button>
+        )}
+      </div>
+
+      {!hoverCapable && open && (
+        <div id={panelId} className="mt-1 flex flex-wrap items-center gap-1">
+          <RowActions
+            task={task}
+            index={index}
+            count={count}
+            onEdit={() => {
+              setOpen(false)
+              setEditing(true)
+            }}
+          />
+        </div>
+      )}
 
       {/*
         Actions sit on top of the row rather than beside it: in a narrow column,
         keeping them in the flow clipped task titles down to "R...". The gradient
         blends the overlay into the row background.
       */}
-      <div className="from-ink-900 via-ink-900 absolute inset-y-0 right-0 hidden items-center rounded-r-lg bg-gradient-to-l to-transparent pr-1 pl-8 group-focus-within:flex group-hover:flex">
-        <Button
-          variant="ghost"
-          size="sm"
-          aria-label={`Move ${task.title} up`}
-          disabled={index === 0}
-          onClick={() => moveTask(task.id, index - 1)}
-        >
-          ↑
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          aria-label={`Move ${task.title} down`}
-          disabled={index === count - 1}
-          onClick={() => moveTask(task.id, index + 1)}
-        >
-          ↓
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          aria-label={`Rename ${task.title}`}
-          onClick={() => setEditing(true)}
-        >
-          Rename
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          aria-label={`Archive ${task.title}`}
-          onClick={() => setStatus(task.id, 'archived', Date.now())}
-        >
-          Archive
-        </Button>
-        <Button
-          variant="danger"
-          size="sm"
-          aria-label={`Delete ${task.title}`}
-          onClick={() => dropTask(task.id)}
-        >
-          ✕
-        </Button>
-      </div>
+      {hoverCapable && (
+        <div className="from-ink-900 via-ink-900 absolute inset-y-0 right-0 hidden items-center rounded-r-lg bg-gradient-to-l to-transparent pr-1 pl-8 group-focus-within:flex group-hover:flex">
+          <RowActions task={task} index={index} count={count} onEdit={() => setEditing(true)} />
+        </div>
+      )}
     </li>
   )
 }

@@ -9,7 +9,9 @@ import '@testing-library/jest-dom/vitest'
 if (typeof window !== 'undefined' && typeof window.matchMedia !== 'function') {
   window.matchMedia = (query: string): MediaQueryList =>
     ({
-      matches: false,
+      // Component tests run as a pointer device: it is the branch most of the
+      // interface assumes, and the touch one is covered end-to-end instead.
+      matches: query.includes('hover: hover'),
       media: query,
       onchange: null,
       addEventListener: () => {},
