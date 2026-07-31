@@ -11,17 +11,6 @@ import { DataSection } from './DataSection'
 import { useExtensionBridge } from '../../platform/extension'
 import { formatDuration } from '../../lib/format'
 
-const SECTIONS = [
-  { id: 'timer', label: 'Timer' },
-  { id: 'flow', label: 'Flow' },
-  { id: 'appearance', label: 'Appearance' },
-  { id: 'sound', label: 'Sound' },
-  { id: 'alerts', label: 'Alerts' },
-  { id: 'storage', label: 'Storage' },
-  { id: 'data', label: 'Your data' },
-  { id: 'shortcuts', label: 'Shortcuts' },
-] as const
-
 export function SettingsScreen() {
   const settings = useApp((s) => s.settings)
   const update = useApp((s) => s.updateSettings)
@@ -49,7 +38,6 @@ export function SettingsScreen() {
   return (
     <div className="mx-auto max-w-4xl py-6">
       <h1 className="sr-only">Settings</h1>
-      <SectionNav />
 
       <Section
         id="timer"
@@ -407,25 +395,6 @@ export function SettingsScreen() {
         </dl>
       </Section>
     </div>
-  )
-}
-
-function SectionNav() {
-  return (
-    <nav aria-label="Settings sections" className="mb-8">
-      <ul className="flex flex-wrap gap-1.5">
-        {SECTIONS.map((section) => (
-          <li key={section.id}>
-            <a
-              href={`#${section.id}`}
-              className="border-ink-800 text-ink-600 hover:border-ink-600 hover:text-ink-100 block rounded-full border px-3 py-1 text-xs transition-colors duration-150 motion-reduce:transition-none"
-            >
-              {section.label}
-            </a>
-          </li>
-        ))}
-      </ul>
-    </nav>
   )
 }
 
