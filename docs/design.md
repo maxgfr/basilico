@@ -133,6 +133,23 @@ the `#` convention is one people already know. A session freezes its task's tag 
 reading it back from the task later would silently rewrite months of history the first time someone
 retags something.
 
+## Two sheets, not one list
+
+Cirillo works with an **activity inventory** — everything you might do — and a **to-do-today sheet**
+you compose each morning. A single flat list that only grows is what makes most task features feel
+thin: nothing ever leaves it, and it never tells you whether the day is plausible.
+
+So a task carries the local day it is planned for, or `null` while it waits in the inventory. Storing
+the day rather than a boolean is what makes carry-over possible: a task still dated yesterday is
+visibly unfinished business, and it rolls forward on load. Finished tasks keep their date — that is
+the record of when they were done.
+
+The plan then converts itself into the only number that matters: five pomodoros left is a little over
+two hours, and that is what tells you whether today fits. Past the daily goal it says so.
+
+A task estimated above seven pomodoros is flagged. That is Cirillo's threshold: beyond it you cannot
+picture the stretches of work any more, so the estimate is a guess and the task is really several.
+
 ## Not built
 
 - **Sync between devices.** Deliberate: it would need a server, which is the one thing this project

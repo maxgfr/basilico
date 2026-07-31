@@ -1,86 +1,163 @@
 import { useRef, useState, type FormEvent } from 'react'
-import { knownTags, visibleTasks, type Task } from '@basilico/core'
+import {
+  backlog,
+  dayKey,
+  dayLoad,
+  knownTags,
+  needsBreakdown,
+  plannedFor,
+  timeByTask,
+  type Task,
+} from '@basilico/core'
 import { useApp } from '../../store/app'
 import { Button } from '../../ui/Button'
 import { Pomodoros } from './Pomodoros'
+import { formatDuration } from '../../lib/format'
 import { useHoverCapable } from '../../platform/media'
 
 export function TaskList() {
   const tasks = useApp((s) => s.tasks)
+  const sessions = useApp((s) => s.sessions)
   const activeTaskId = useApp((s) => s.activeTaskId)
+  const goalMinutes = useApp((s) => s.settings.dailyGoalMinutes)
+  const focusMinutes = useApp((s) => s.settings.durations.focus)
   const addTask = useApp((s) => s.addTask)
   const setActiveTask = useApp((s) => s.setActiveTask)
 
-  const visible = visibleTasks(tasks)
-  const open = visible.filter((t) => t.status === 'active')
-  const done = visible.filter((t) => t.status === 'done')
+  const today = dayKey(Date.now())
+  const plan = plannedFor(tasks, today)
+  const open = plan.filter((t) => t.status === 'active')
+  const done = plan.filter((t) => t.status === 'done')
+  const waiting = backlog(tasks)
+  const load = dayLoad(tasks, today)
+  const spent = timeByTask(sessions)
 
   return (
-    <section aria-labelledby="tasks-heading" className="flex w-full flex-col gap-4">
-      <div className="flex items-baseline justify-between">
-        <h2 id="tasks-heading" className="text-sm font-medium tracking-wide uppercase">
-          Tasks
-        </h2>
-        {open.length > 0 && (
-          <span className="text-ink-600 tabular text-xs">
-            {open.reduce((n, t) => n + t.completedPomodoros, 0)} /{' '}
-            {open.reduce((n, t) => n + t.estimatedPomodoros, 0)} pomodoros
-          </span>
-        )}
-      </div>
+    <div className="flex w-full flex-col gap-8">
+      <section aria-labelledby="today-heading" className="flex flex-col gap-4">
+        <div className="flex items-baseline justify-between gap-3">
+          <h2 id="today-heading" className="text-sm font-medium tracking-wide uppercase">
+            Today
+          </h2>
+          {load.estimated > 0 && (
+            <span className="text-ink-600 tabular text-xs">
+              {load.completed} / {load.estimated} pomodoros
+            </span>
+          )}
+        </div>
 
-      <AddTaskForm
-        tags={knownTags(tasks)}
-        onAdd={(raw, estimate) => addTask(raw, estimate, Date.now())}
-      />
+        <AddTaskForm
+          tags={knownTags(tasks)}
+          onAdd={(raw, estimate) => addTask(raw, estimate, Date.now())}
+        />
 
-      {open.length === 0 && done.length === 0 ? (
-        <EmptyTasks />
-      ) : (
-        <ul className="flex flex-col gap-1">
-          {open.map((task, index) => (
-            <TaskRow
-              key={task.id}
-              task={task}
-              index={index}
-              count={open.length}
-              active={task.id === activeTaskId}
-              onActivate={() => setActiveTask(task.id)}
-            />
-          ))}
-        </ul>
-      )}
-
-      {done.length > 0 && (
-        <details className="text-ink-600 text-sm">
-          <summary className="hover:text-ink-300 cursor-pointer select-none">
-            {done.length} done
-          </summary>
-          <ul className="mt-2 flex flex-col gap-1">
-            {done.map((task, index) => (
+        {open.length === 0 && done.length === 0 ? (
+          <EmptyTasks hasBacklog={waiting.length > 0} />
+        ) : (
+          <ul className="flex flex-col gap-1">
+            {open.map((task, index) => (
               <TaskRow
                 key={task.id}
                 task={task}
                 index={index}
-                count={done.length}
-                active={false}
+                count={open.length}
+                spentMs={spent.get(task.id) ?? 0}
+                active={task.id === activeTaskId}
                 onActivate={() => setActiveTask(task.id)}
               />
             ))}
           </ul>
-        </details>
+        )}
+
+        {load.remaining > 0 && (
+          <DayLoadNote remaining={load.remaining} focusMinutes={focusMinutes} goal={goalMinutes} />
+        )}
+
+        {done.length > 0 && (
+          <details className="text-ink-600 text-sm">
+            <summary className="hover:text-ink-300 cursor-pointer select-none">
+              {done.length} done today
+            </summary>
+            <ul className="mt-2 flex flex-col gap-1">
+              {done.map((task, index) => (
+                <TaskRow
+                  key={task.id}
+                  task={task}
+                  index={index}
+                  count={done.length}
+                  spentMs={spent.get(task.id) ?? 0}
+                  active={false}
+                  onActivate={() => setActiveTask(task.id)}
+                />
+              ))}
+            </ul>
+          </details>
+        )}
+      </section>
+
+      {waiting.length > 0 && (
+        <section aria-labelledby="backlog-heading" className="flex flex-col gap-3">
+          <div className="flex items-baseline justify-between gap-3">
+            <h2 id="backlog-heading" className="text-sm font-medium tracking-wide uppercase">
+              Backlog
+            </h2>
+            <span className="text-ink-600 text-xs">{waiting.length} waiting</span>
+          </div>
+          <ul className="flex flex-col gap-1">
+            {waiting.map((task, index) => (
+              <TaskRow
+                key={task.id}
+                task={task}
+                index={index}
+                count={waiting.length}
+                spentMs={spent.get(task.id) ?? 0}
+                active={task.id === activeTaskId}
+                onActivate={() => setActiveTask(task.id)}
+              />
+            ))}
+          </ul>
+        </section>
       )}
-    </section>
+    </div>
   )
 }
 
-function EmptyTasks() {
+/**
+ * What the plan actually asks of you, in time rather than in counters.
+ *
+ * A row of estimates says nothing until you convert it: five pomodoros left is
+ * a little over two hours, and that is the number that tells you whether the
+ * day is plausible.
+ */
+function DayLoadNote({
+  remaining,
+  focusMinutes,
+  goal,
+}: {
+  remaining: number
+  focusMinutes: number
+  goal: number
+}) {
+  const remainingMs = remaining * focusMinutes * 60_000
+  const overGoal = goal > 0 && remaining * focusMinutes > goal
+
+  return (
+    <p className="text-ink-600 text-xs">
+      {remaining} pomodoro{remaining > 1 ? 's' : ''} left to plan —{' '}
+      <span className="text-ink-300">about {formatDuration(remainingMs)}</span> of focus.
+      {overGoal && ' That is past your daily goal; consider moving something to the backlog.'}
+    </p>
+  )
+}
+
+function EmptyTasks({ hasBacklog }: { hasBacklog: boolean }) {
   return (
     <div className="border-ink-800 text-ink-600 rounded-xl border border-dashed p-6 text-sm">
-      <p className="text-ink-300">Nothing to work on yet.</p>
+      <p className="text-ink-300">Nothing planned for today.</p>
       <p className="mt-2">
-        Add a task and estimate it in pomodoros. Each finished focus credits the active task —
-        that’s what fills your stats and tells you how accurate your estimates really are.
+        {hasBacklog
+          ? 'Pull something up from the backlog below, or add a task and estimate it in pomodoros.'
+          : 'Add a task and estimate it in pomodoros. Each finished focus credits the active task — that’s what fills your stats and tells you how accurate your estimates really are.'}
       </p>
     </div>
   )
@@ -90,6 +167,7 @@ type RowProps = {
   task: Task
   index: number
   count: number
+  spentMs: number
   active: boolean
   onActivate: () => void
 }
@@ -112,9 +190,19 @@ function RowActions({
   const setStatus = useApp((s) => s.setStatus)
   const dropTask = useApp((s) => s.dropTask)
   const moveTask = useApp((s) => s.moveTask)
+  const plan = useApp((s) => s.planTask)
+  const planned = task.plannedFor !== null
 
   return (
     <>
+      <Button
+        variant="ghost"
+        size="sm"
+        aria-label={planned ? `Move ${task.title} to the backlog` : `Plan ${task.title} for today`}
+        onClick={() => plan(task.id, planned ? null : dayKey(Date.now()))}
+      >
+        {planned ? 'To backlog' : 'Today'}
+      </Button>
       <Button
         variant="ghost"
         size="sm"
@@ -156,7 +244,7 @@ function RowActions({
   )
 }
 
-function TaskRow({ task, index, count, active, onActivate }: RowProps) {
+function TaskRow({ task, index, count, spentMs, active, onActivate }: RowProps) {
   const setStatus = useApp((s) => s.setStatus)
   const rename = useApp((s) => s.renameTask)
   const [editing, setEditing] = useState(false)
@@ -227,7 +315,18 @@ function TaskRow({ task, index, count, active, onActivate }: RowProps) {
           <span className={`block truncate text-sm ${isDone ? 'text-ink-600 line-through' : ''}`}>
             {task.title}
           </span>
-          {task.tag && <span className="text-ink-600 text-xs">#{task.tag}</span>}
+          <span className="text-ink-600 flex flex-wrap items-center gap-x-2 text-xs">
+            {task.tag && <span>#{task.tag}</span>}
+            {spentMs > 0 && <span className="tabular">{formatDuration(spentMs)} spent</span>}
+            {needsBreakdown(task) && (
+              <span
+                className="text-long"
+                title="Cirillo: more than 5-7 pomodoros means it is really several tasks"
+              >
+                too big — break it down
+              </span>
+            )}
+          </span>
         </button>
 
         <Pomodoros done={task.completedPomodoros} estimated={task.estimatedPomodoros} />

@@ -31,6 +31,7 @@ const task: Task = {
   order: 0,
   createdAt: 0,
   completedAt: null,
+  plannedFor: null,
 }
 
 describe('settings', () => {

@@ -14,7 +14,11 @@ import {
   finish,
   pause,
   parseSettings,
+  carryOver,
+  dayKey,
+  normalizeTask,
   parseTaskInput,
+  planTask as planTaskCore,
   removeTask as removeTaskCore,
   renameTask as renameTaskCore,
   reorderTasks,
@@ -68,6 +72,7 @@ type AppState = {
   updateSettings: (patch: Partial<Settings>) => void
   addTask: (raw: string, estimatedPomodoros: number, now: number) => void
   renameTask: (id: string, raw: string) => void
+  planTask: (id: string, day: string | null) => void
   annotateLast: (patch: SessionAnnotation) => void
   editTask: (id: string, patch: Partial<Task>) => void
   setStatus: (id: string, status: TaskStatus, now: number) => void
@@ -188,6 +193,8 @@ export const useApp = create<AppState>()(
 
         renameTask: (id, raw) => set({ tasks: renameTaskCore(get().tasks, id, raw) }),
 
+        planTask: (id, day) => set({ tasks: planTaskCore(get().tasks, id, day) }),
+
         /**
          * Annotates the session that just ended. The only write the append-only
          * log accepts, and it never touches durations or outcome.
@@ -272,7 +279,9 @@ export const useApp = create<AppState>()(
           settings,
           timer: saved.timer ?? createTimerState(settings),
           sessions: saved.sessions ?? [],
-          tasks: saved.tasks ?? [],
+          // Normalised then rolled forward on load: a task planned for a past day
+          // is a leftover, and left dated it would silently drop out of today.
+          tasks: carryOver((saved.tasks ?? []).map(normalizeTask), dayKey(Date.now())),
           pending: [],
         }
       },

@@ -163,3 +163,25 @@ test('the interruption menu explains itself and closes politely', async ({ page 
   await expect(menu).toBeHidden()
   await expect(trigger).toBeFocused()
 })
+
+test('today and the backlog are two different lists', async ({ page }, testInfo) => {
+  await page.getByLabel('Task title').fill('Do it now')
+  await page.getByRole('button', { name: 'Add' }).click()
+
+  const today = page.getByRole('region', { name: 'Today' })
+  // A task you just typed is almost always one you are about to do, so it lands
+  // on today rather than making you fish it back out of an inventory.
+  await expect(today.getByText('Do it now')).toBeVisible()
+  await expect(page.getByRole('region', { name: 'Backlog' })).toHaveCount(0)
+
+  const row = page.getByRole('listitem').filter({ hasText: 'Do it now' })
+  if (testInfo.project.name === 'mobile') {
+    await row.getByRole('button', { name: 'Actions for Do it now' }).tap()
+  } else {
+    await row.hover()
+  }
+  await page.getByRole('button', { name: 'Move Do it now to the backlog' }).click()
+
+  await expect(page.getByRole('region', { name: 'Backlog' }).getByText('Do it now')).toBeVisible()
+  await expect(today.getByText('Do it now')).toHaveCount(0)
+})

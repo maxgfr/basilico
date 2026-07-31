@@ -49,6 +49,9 @@ const taskSchema = z.object({
   order: z.number(),
   createdAt: z.number(),
   completedAt: z.number().nullable().default(null),
+  // Absent from backups taken before the day plan existed: a task without it
+  // belongs to the backlog, which is the safe reading.
+  plannedFor: z.string().nullable().default(null),
 })
 
 const backupSchema = z.object({

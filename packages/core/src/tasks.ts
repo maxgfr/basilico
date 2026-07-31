@@ -1,4 +1,5 @@
-import type { Task, TaskStatus } from './types'
+import { dayKey } from './stats'
+import type { SessionRecord, Task, TaskStatus } from './types'
 
 /**
  * Pulls `#tags` out of a typed title.
@@ -39,7 +40,90 @@ export function createTask(tasks: readonly Task[], input: NewTask, now: number, 
     order: maxOrder + 1,
     createdAt: now,
     completedAt: null,
+    // New tasks land on today's plan: you almost always add one because you are
+    // about to do it. Pushing it to the backlog would mean a second click every
+    // single time.
+    plannedFor: dayKey(now),
   }
+}
+
+/**
+ * Cirillo's rule: "If it takes more than 5-7 pomodoros, break it down."
+ *
+ * Past this size an estimate stops being an estimate — you cannot picture seven
+ * uninterrupted stretches of work, so the number is a guess and the task is
+ * really several tasks.
+ */
+export const BREAKDOWN_THRESHOLD = 7
+
+export const needsBreakdown = (task: Task): boolean => task.estimatedPomodoros > BREAKDOWN_THRESHOLD
+
+/** Puts a task on a day's plan, or back in the backlog with `null`. */
+export function planTask(tasks: readonly Task[], id: string, day: string | null): Task[] {
+  return tasks.map((t) => (t.id === id ? { ...t, plannedFor: day } : t))
+}
+
+/**
+ * Rolls unfinished work forward.
+ *
+ * A task still planned for a past day is not a plan any more, it is a leftover —
+ * and leaving it dated yesterday would quietly hide it from today's list. Done
+ * and archived ones keep their date: that is the record of when they were done.
+ */
+export function carryOver(tasks: readonly Task[], today: string): Task[] {
+  return tasks.map((t) =>
+    t.status === 'active' && t.plannedFor !== null && t.plannedFor < today
+      ? { ...t, plannedFor: today }
+      : t,
+  )
+}
+
+/** Tasks on a given day's plan, in order. */
+export function plannedFor(tasks: readonly Task[], day: string): Task[] {
+  return tasks
+    .filter((t) => t.plannedFor === day && t.status !== 'archived')
+    .toSorted((a, b) => a.order - b.order)
+}
+
+/** Everything still waiting in the inventory, never scheduled. */
+export function backlog(tasks: readonly Task[]): Task[] {
+  return tasks
+    .filter((t) => t.plannedFor === null && t.status === 'active')
+    .toSorted((a, b) => a.order - b.order)
+}
+
+export type DayLoad = {
+  estimated: number
+  completed: number
+  /** Estimated pomodoros still to do, i.e. excluding finished tasks. */
+  remaining: number
+}
+
+/** What the day's plan actually adds up to, in pomodoros. */
+export function dayLoad(tasks: readonly Task[], day: string): DayLoad {
+  let estimated = 0
+  let completed = 0
+  let remaining = 0
+
+  for (const task of plannedFor(tasks, day)) {
+    estimated += task.estimatedPomodoros
+    completed += task.completedPomodoros
+    if (task.status !== 'done') {
+      remaining += Math.max(0, task.estimatedPomodoros - task.completedPomodoros)
+    }
+  }
+
+  return { estimated, completed, remaining }
+}
+
+/** Focus time actually spent per task, keyed by task id. */
+export function timeByTask(sessions: readonly SessionRecord[]): Map<string, number> {
+  const spent = new Map<string, number>()
+  for (const session of sessions) {
+    if (session.mode !== 'focus' || session.taskId === null) continue
+    spent.set(session.taskId, (spent.get(session.taskId) ?? 0) + session.actualMs)
+  }
+  return spent
 }
 
 export function updateTask(tasks: readonly Task[], id: string, patch: Partial<Task>): Task[] {
@@ -104,4 +188,13 @@ export function reorderTasks(tasks: readonly Task[], id: string, to: number): Ta
 
 export function visibleTasks(tasks: readonly Task[]): Task[] {
   return tasks.filter((t) => t.status !== 'archived').toSorted((a, b) => a.order - b.order)
+}
+
+/**
+ * Fills in fields added after a task was stored. Without this, tasks saved
+ * before the day plan existed would have `plannedFor` undefined and vanish from
+ * both lists — present in storage, invisible in the app.
+ */
+export function normalizeTask(task: Task): Task {
+  return { ...task, plannedFor: task.plannedFor ?? null }
 }

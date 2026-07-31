@@ -157,6 +157,7 @@ const task = (over: Partial<Task>): Task => ({
   order: 0,
   createdAt: 0,
   completedAt: 1,
+  plannedFor: null,
   ...over,
 })
 

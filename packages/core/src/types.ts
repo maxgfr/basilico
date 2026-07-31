@@ -79,4 +79,14 @@ export type Task = {
   order: number
   createdAt: number
   completedAt: number | null
+  /**
+   * Local day key (`YYYY-MM-DD`) this task is planned for, or `null` while it
+   * only sits in the backlog.
+   *
+   * Cirillo works with two sheets: an activity inventory that accumulates
+   * everything, and a to-do-today sheet you compose each morning. Storing the
+   * day rather than a boolean is what makes carry-over possible — a task still
+   * planned for yesterday is visibly unfinished business.
+   */
+  plannedFor: string | null
 }
