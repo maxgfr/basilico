@@ -63,7 +63,7 @@ async function playAlarm(): Promise<void> {
       await chrome.offscreen.createDocument({
         url: OFFSCREEN,
         reasons: ['AUDIO_PLAYBACK'],
-        justification: 'Faire sonner la fin d’une session de focus.',
+        justification: 'Ring the end of a focus session.',
       })
     }
     await chrome.runtime.sendMessage({ target: 'offscreen', type: 'play' })
@@ -82,7 +82,7 @@ chrome.alarms.onAlarm.addListener((alarm) => {
     chrome.notifications.create(`${ALARM}-${Date.now()}`, {
       type: 'basic',
       iconUrl: 'icons/icon-128.png',
-      title: `${MODE_LABEL[mode]} terminé`,
+      title: `${MODE_LABEL[mode]} finished`,
       message: phase?.taskTitle ? `${NEXT_HINT[mode]} (${phase.taskTitle})` : NEXT_HINT[mode],
       priority: 2,
       requireInteraction: true,

@@ -28,17 +28,17 @@ export default defineConfig({
         // Toutes les URL sont relatives au manifeste : un `start_url` absolu
         // ouvrirait maxgfr.github.io au lieu de basilico une fois l'app installée.
         id: '/basilico/',
-        name: 'basilico — minuteur de focus',
+        name: 'basilico — focus timer',
         short_name: 'basilico',
         description:
-          'Un minuteur de focus local-first : sessions, tâches, statistiques et alertes, sans compte ni serveur.',
+          'A local-first focus timer: sessions, tasks, stats and alerts. No account, no server.',
         start_url: './',
         scope: './',
         display: 'standalone',
         orientation: 'portrait-primary',
         background_color: '#0b0f0e',
         theme_color: '#0b0f0e',
-        lang: 'fr',
+        lang: 'en',
         categories: ['productivity', 'utilities'],
         icons: [
           { src: 'icons/icon-192.png', sizes: '192x192', type: 'image/png' },

@@ -12,14 +12,14 @@ export function ActiveTaskBar() {
   if (!activeTaskId || !task) {
     return (
       <p className="text-ink-600 px-4 text-center text-sm">
-        Aucune tâche active — cette session sera enregistrée sans rattachement.
+        No active task — this session won’t be attributed to anything.
       </p>
     )
   }
 
   return (
     <div className="text-ink-300 flex max-w-full flex-wrap items-center justify-center gap-x-3 gap-y-1 px-4 text-center text-sm">
-      <span className="text-ink-600">En cours&nbsp;:</span>
+      <span className="text-ink-600">Working on</span>
       <span className="text-ink-100 max-w-full truncate font-medium">{task.title}</span>
       <Pomodoros done={task.completedPomodoros} estimated={task.estimatedPomodoros} />
     </div>

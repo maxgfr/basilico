@@ -6,6 +6,9 @@ export const SETTINGS_VERSION = 1
  * Un preset ne fixe que les durées : tout le reste des réglages reste celui de
  * l'utilisateur. 25/5 est le canon Cirillo ; 50/10 et 52/17 sont les deux
  * rythmes que réclament le plus les gens pour qui 25 minutes coupe le flow.
+ *
+ * Par défaut le cycle tourne en boucle : les pauses **et** les focus
+ * s'enchaînent seuls, on ne represse jamais « démarrer ».
  */
 export const DURATION_PRESETS = {
   classic: { label: '25 / 5', focus: 25, shortBreak: 5, longBreak: 15 },
@@ -48,7 +51,6 @@ export const settingsSchema = z.object({
   wakeLock: z.boolean(),
   pip: z.boolean(),
   theme: z.enum(['system', 'light', 'dark']),
-  locale: z.enum(['fr', 'en']),
   weekStartsOn: z.union([z.literal(0), z.literal(1)]),
   hourFormat: z.union([z.literal(12), z.literal(24)]),
 })
@@ -60,7 +62,7 @@ export const defaultSettings: Settings = {
   durations: { focus: 25, shortBreak: 5, longBreak: 15 },
   longBreakEvery: 4,
   autoStartBreaks: true,
-  autoStartFocus: false,
+  autoStartFocus: true,
   mode: 'classic',
   flowtimeBreakRatio: 0.2,
   display: 'exact',
@@ -70,7 +72,6 @@ export const defaultSettings: Settings = {
   wakeLock: false,
   pip: false,
   theme: 'system',
-  locale: 'fr',
   weekStartsOn: 1,
   hourFormat: 24,
 }

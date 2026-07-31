@@ -22,9 +22,9 @@ const seed = async (page, { theme }) => {
       const now = Date.now()
 
       const tasks = [
-        ['t1', 'Écrire le noyau de domaine', 'basilico', 5, 3, 'active'],
-        ['t2', 'Relire la revue de code', 'boulot', 2, 0, 'active'],
-        ['t3', 'Préparer la démo de vendredi', 'boulot', 3, 4, 'done'],
+        ['t1', 'Write the domain core', 'basilico', 5, 3, 'active'],
+        ['t2', 'Review the pull request', 'work', 2, 0, 'active'],
+        ['t3', 'Prepare Friday’s demo', 'work', 3, 4, 'done'],
       ].map(([id, title, tag, estimated, completed, status], order) => ({
         id,
         title,
@@ -54,7 +54,7 @@ const seed = async (page, { theme }) => {
             overtimeMs: 0,
             outcome: (d + i) % 9 === 0 ? 'voided' : 'completed',
             taskId: i % 2 ? 't1' : 't3',
-            tag: i % 2 ? 'basilico' : 'boulot',
+            tag: i % 2 ? 'basilico' : 'work',
             interruptions: {
               internal: (d + i) % 3 === 0 ? 1 : 0,
               external: (d + i) % 5 === 0 ? 1 : 0,
@@ -99,9 +99,9 @@ const browser = await chromium.launch()
 
 const SHOTS = [
   { file: 'timer.png', theme: 'dark', route: '', device: devices['Desktop Chrome'] },
-  { file: 'timer-clair.png', theme: 'light', route: '', device: devices['Desktop Chrome'] },
+  { file: 'timer-light.png', theme: 'light', route: '', device: devices['Desktop Chrome'] },
   { file: 'stats.png', theme: 'dark', route: '#/stats', device: devices['Desktop Chrome'] },
-  { file: 'reglages.png', theme: 'dark', route: '#/reglages', device: devices['Desktop Chrome'] },
+  { file: 'settings.png', theme: 'dark', route: '#/settings', device: devices['Desktop Chrome'] },
   { file: 'mobile.png', theme: 'dark', route: '', device: devices['Pixel 7'] },
 ]
 

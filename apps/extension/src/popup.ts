@@ -20,10 +20,10 @@ function render(phase: Phase | null): string {
   if (!phase || phase.endsAt === null) {
     return `
       <p class="hint">
-        Aucune session en cours. Démarre un focus dans basilico&nbsp;: l’extension prendra
-        le relais des alertes, même si tu fermes l’onglet.
+        No session running. Start a focus in basilico and this extension takes over the
+        alerts — even if you close the tab.
       </p>
-      <a class="button" href="${APP_URL}" target="_blank" rel="noreferrer">Ouvrir basilico</a>`
+      <a class="button" href="${APP_URL}" target="_blank" rel="noreferrer">Open basilico</a>`
   }
 
   const remaining = phase.endsAt - Date.now()
@@ -32,8 +32,8 @@ function render(phase: Phase | null): string {
     <div class="mode">${MODE_LABEL[phase.mode]}${
       phase.taskTitle ? ` · ${phase.taskTitle}` : ''
     }</div>
-    <p class="hint">L’alerte est armée. Tu peux fermer l’onglet.</p>
-    <a class="button" href="${APP_URL}" target="_blank" rel="noreferrer">Ouvrir basilico</a>`
+    <p class="hint">The alarm is armed. You can close the tab.</p>
+    <a class="button" href="${APP_URL}" target="_blank" rel="noreferrer">Open basilico</a>`
 }
 
 const root = document.getElementById('app')

@@ -97,13 +97,13 @@ describe('sauvegarde', () => {
   })
 
   it('explique pourquoi un fichier est refusé plutôt que de l’avaler', () => {
-    expect(parseBackup('{pas du json')).toEqual({
+    expect(parseBackup('{not json')).toEqual({
       ok: false,
-      error: "Ce fichier n'est pas du JSON valide.",
+      error: 'This file is not valid JSON.',
     })
 
     const wrongApp = parseBackup({
-      app: 'autre',
+      app: 'other',
       version: 1,
       exportedAt: 0,
       sessions: [],

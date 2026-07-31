@@ -1,16 +1,21 @@
 import { useId, type ReactNode } from 'react'
 
 export function Section({
+  id,
   title,
   description,
   children,
 }: {
+  id?: string
   title: string
   description?: string
   children: ReactNode
 }) {
   return (
-    <section className="border-ink-800 border-t py-8 first:border-t-0 first:pt-0">
+    <section
+      id={id}
+      className="border-ink-800 scroll-mt-24 border-t py-8 first:border-t-0 first:pt-0"
+    >
       <div className="grid gap-6 md:grid-cols-[14rem_1fr] md:gap-10">
         <div>
           <h2 className="text-sm font-medium tracking-wide uppercase">{title}</h2>
@@ -115,7 +120,7 @@ export function NumberField({
           }}
           className="border-ink-800 bg-ink-900 tabular focus:border-ink-600 h-9 w-20 rounded-lg border px-3 text-right text-sm outline-none"
         />
-        {suffix && <span className="text-ink-600 w-8 text-xs">{suffix}</span>}
+        {suffix && <span className="text-ink-600 w-12 text-xs">{suffix}</span>}
       </div>
     </Row>
   )
@@ -155,5 +160,74 @@ export function Choice<T extends string>({
         ))}
       </div>
     </Row>
+  )
+}
+
+/**
+ * Choix présenté en cartes, chacune portant sa propre explication.
+ *
+ * Un segmented control doublé d'une infobulle qui change au clic oblige à
+ * sélectionner une option pour découvrir ce qu'elle fait. Ici les trois
+ * descriptions sont visibles en même temps : on compare avant de choisir.
+ */
+export function OptionCards<T extends string>({
+  value,
+  options,
+  onChange,
+  label,
+}: {
+  value: T
+  options: { value: T; label: string; description: string }[]
+  onChange: (next: T) => void
+  label: string
+}) {
+  return (
+    <div role="radiogroup" aria-label={label} className="grid gap-2 sm:grid-cols-3">
+      {options.map((option) => {
+        const selected = value === option.value
+        return (
+          <button
+            key={option.value}
+            type="button"
+            role="radio"
+            aria-checked={selected}
+            onClick={() => onChange(option.value)}
+            className={`focus-visible:outline-ink-300 rounded-xl border p-3 text-left transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none ${
+              selected
+                ? 'border-focus bg-ink-900'
+                : 'border-ink-800 hover:border-ink-600 hover:bg-ink-900/60'
+            }`}
+          >
+            <span className="flex items-center gap-2">
+              <span
+                aria-hidden="true"
+                className={`size-3 shrink-0 rounded-full border ${
+                  selected ? 'border-focus bg-focus' : 'border-ink-600'
+                }`}
+              />
+              <span className="text-sm font-medium">{option.label}</span>
+            </span>
+            <span className="text-ink-600 mt-1.5 block text-xs leading-relaxed">
+              {option.description}
+            </span>
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
+type PillTone = 'ok' | 'warn' | 'muted'
+
+const PILL: Record<PillTone, string> = {
+  ok: 'bg-focus/15 text-focus',
+  warn: 'bg-danger-soft/60 text-danger',
+  muted: 'bg-ink-800 text-ink-300',
+}
+
+/** État d'une permission ou d'une capacité, en un coup d'œil. */
+export function StatusPill({ tone, children }: { tone: PillTone; children: ReactNode }) {
+  return (
+    <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${PILL[tone]}`}>{children}</span>
   )
 }

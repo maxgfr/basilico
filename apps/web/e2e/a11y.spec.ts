@@ -10,14 +10,14 @@ import { expect, test } from '@playwright/test'
  * exactement ce qui se glisse dans une interface au fil des retouches.
  */
 const SCREENS = [
-  { name: 'minuteur', hash: '' },
-  { name: 'statistiques', hash: '#/stats' },
-  { name: 'réglages', hash: '#/reglages' },
+  { name: 'timer', hash: '' },
+  { name: 'stats', hash: '#/stats' },
+  { name: 'settings', hash: '#/settings' },
 ] as const
 
 for (const theme of ['dark', 'light'] as const) {
   for (const screen of SCREENS) {
-    test(`aucune violation d'accessibilité — ${screen.name}, thème ${theme}`, async ({ page }) => {
+    test(`no accessibility violation — ${screen.name}, ${theme} theme`, async ({ page }) => {
       await page.goto('/')
       await page.evaluate((theme) => {
         const raw = JSON.parse(localStorage.getItem('basilico:v1:app') ?? '{"state":{}}')
@@ -26,7 +26,7 @@ for (const theme of ['dark', 'light'] as const) {
         raw.state.tasks = [
           {
             id: 't1',
-            title: 'Écrire le noyau',
+            title: 'Write the core',
             notes: null,
             tag: 'basilico',
             estimatedPomodoros: 3,

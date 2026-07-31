@@ -1,7 +1,7 @@
 import type { DayBucket } from '@basilico/core'
 import { formatDuration } from '../../lib/format'
 
-const WEEKDAY = ['L', 'M', 'M', 'J', 'V', 'S', 'D']
+const WEEKDAY = ['M', 'T', 'W', 'T', 'F', 'S', 'S']
 
 /** Barres journalières. Rien d'autre que des rectangles : aucune bibliothèque requise. */
 export function DailyBars({ data }: { data: DayBucket[] }) {
@@ -64,16 +64,16 @@ export function Heatmap({ data }: { data: DayBucket[] }) {
   return (
     <div aria-hidden="true" className="flex gap-1">
       <div className="text-ink-600 mr-1 flex flex-col justify-between py-0.5 text-[9px]">
-        <span>L</span>
         <span>M</span>
-        <span>V</span>
-        <span>D</span>
+        <span>W</span>
+        <span>F</span>
+        <span>S</span>
       </div>
       {Array.from({ length: columns }, (_col, column) => (
         <div key={column} className="flex flex-col gap-1">
           {Array.from({ length: 7 }, (_row, row) => {
             const cell = cells[column * 7 + row]
-            if (!cell) return <span key={`vide-${column}-${row}`} className="size-2.5" />
+            if (!cell) return <span key={`empty-${column}-${row}`} className="size-2.5" />
             return (
               <span
                 key={cell.date}
@@ -99,7 +99,7 @@ export function HourProfile({ hours }: { hours: number[] }) {
             <div
               className={`w-full rounded-t-[2px] ${ms > 0 ? 'bg-short' : 'bg-ink-800'}`}
               style={{ height: `${Math.max((ms / max) * 100, ms > 0 ? 6 : 2)}%` }}
-              title={`${hour} h — ${formatDuration(ms)}`}
+              title={`${hour}:00 — ${formatDuration(ms)}`}
             />
           </div>
           {hour % 6 === 0 && <span className="text-ink-600 tabular text-[9px]">{hour}h</span>}

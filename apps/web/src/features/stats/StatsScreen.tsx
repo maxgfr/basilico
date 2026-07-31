@@ -43,10 +43,10 @@ export function StatsScreen() {
 
   return (
     <div className="flex flex-col gap-6 py-6">
-      <h1 className="sr-only">Statistiques</h1>
+      <h1 className="sr-only">Stats</h1>
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <Stat label="Focus aujourd’hui" value={formatDuration(stats.today.focusMs)}>
+        <Stat label="Focus today" value={formatDuration(stats.today.focusMs)}>
           {goalMs > 0 && (
             <div className="bg-ink-800 mt-3 h-1 w-full overflow-hidden rounded-full">
               <div
@@ -56,34 +56,34 @@ export function StatsScreen() {
             </div>
           )}
         </Stat>
-        <Stat label="Pomodoros aujourd’hui" value={String(stats.today.completedFocus)} />
+        <Stat label="Pomodoros today" value={String(stats.today.completedFocus)} />
         <Stat
-          label="Série en cours"
-          value={stats.streak > 0 ? `${stats.streak} j` : '—'}
-          hint={stats.streak > 1 ? 'jours consécutifs' : undefined}
+          label="Current streak"
+          value={stats.streak > 0 ? `${stats.streak} d` : '—'}
+          hint={stats.streak > 1 ? 'consecutive days' : undefined}
         />
         <Stat
-          label="Total"
+          label="All time"
           value={formatDuration(stats.all.focusMs)}
           hint={`${stats.all.completedFocus} pomodoros`}
         />
       </div>
 
       <Figure
-        title="Quatorze derniers jours"
-        summary={`Minutes de focus par jour. Total ${formatDuration(
+        title="Last fourteen days"
+        summary={`Focus minutes per day. Total ${formatDuration(
           stats.fortnight.reduce((n, d) => n + d.focusMs, 0),
         )}.`}
-        columns={['Jour', 'Focus']}
+        columns={['Day', 'Focus']}
         rows={stats.fortnight.map((d) => [d.date, formatDuration(d.focusMs)])}
       >
         <DailyBars data={stats.fortnight} />
       </Figure>
 
       <Figure
-        title="Sur un an"
-        summary="Une case par jour, plus la case est claire moins il y a eu de focus."
-        columns={['Jour', 'Focus']}
+        title="Across the year"
+        summary="One cell per day; the lighter the cell, the less focus that day."
+        columns={['Day', 'Focus']}
         rows={stats.year
           .filter((d) => d.focusMs > 0)
           .map((d) => [d.date, formatDuration(d.focusMs)])}
@@ -93,11 +93,11 @@ export function StatsScreen() {
 
       <div className="grid gap-6 lg:grid-cols-2">
         <Figure
-          title="Tes heures productives"
-          summary="Répartition du temps de focus sur les 24 heures de la journée."
-          columns={['Heure', 'Focus']}
+          title="Your productive hours"
+          summary="How your focus time spreads across the 24 hours of the day."
+          columns={['Hour', 'Focus']}
           rows={stats.hours
-            .map((ms, hour): [string, string] => [`${hour} h`, formatDuration(ms)])
+            .map((ms, hour): [string, string] => [`${hour}:00`, formatDuration(ms)])
             .filter(([, value]) => value !== '—')}
         >
           <HourProfile hours={stats.hours} />
@@ -105,35 +105,35 @@ export function StatsScreen() {
 
         <Figure
           title="Interruptions"
-          summary={`${stats.all.interruptions.internal} internes et ${stats.all.interruptions.external} externes depuis le début.`}
-          columns={['Type', 'Nombre']}
+          summary={`${stats.all.interruptions.internal} internal and ${stats.all.interruptions.external} external so far.`}
+          columns={['Kind', 'Count']}
           rows={[
-            ['Internes', String(stats.all.interruptions.internal)],
-            ['Externes', String(stats.all.interruptions.external)],
-            ['Focus annulés', String(stats.all.voidedFocus)],
+            ['Internal', String(stats.all.interruptions.internal)],
+            ['External', String(stats.all.interruptions.external)],
+            ['Voided focus sessions', String(stats.all.voidedFocus)],
           ]}
         >
           <dl aria-hidden="true" className="grid grid-cols-3 gap-4 pt-2">
-            <Metric label="Internes" value={stats.all.interruptions.internal} />
-            <Metric label="Externes" value={stats.all.interruptions.external} />
-            <Metric label="Focus annulés" value={stats.all.voidedFocus} />
+            <Metric label="Internal" value={stats.all.interruptions.internal} />
+            <Metric label="External" value={stats.all.interruptions.external} />
+            <Metric label="Voided" value={stats.all.voidedFocus} />
           </dl>
           <p className="text-ink-600 mt-4 text-xs">
-            Les internes viennent de toi, les externes des autres. Les compter est la première étape
-            pour les faire baisser.
+            Internal ones come from you, external ones from other people. Counting them is the first
+            step to having fewer of them.
           </p>
         </Figure>
       </div>
 
       {stats.estimation.rows.length > 0 && (
         <Figure
-          title="Précision de tes estimations"
+          title="How accurate your estimates are"
           summary={
             stats.estimation.overall === null
-              ? 'Pas encore de tâche terminée.'
-              : `En moyenne, tes tâches prennent ${formatRatio(stats.estimation.overall)} de ce que tu prévois.`
+              ? 'No completed task yet.'
+              : `On average your tasks take ${formatRatio(stats.estimation.overall)} of what you plan.`
           }
-          columns={['Tâche', 'Réel / estimé']}
+          columns={['Task', 'Actual / estimated']}
           rows={stats.estimation.rows.map((r) => [r.title, `${r.actual} / ${r.estimated}`])}
         >
           <ul aria-hidden="true" className="flex flex-col gap-2 text-sm">
@@ -153,8 +153,8 @@ export function StatsScreen() {
 
       {stats.tags.length > 0 && (
         <Figure
-          title="Par tag"
-          summary="Répartition du temps de focus entre tes tags."
+          title="By tag"
+          summary="How your focus time splits between tags."
           columns={['Tag', 'Focus']}
           rows={stats.tags.map((t) => [t.key, formatDuration(t.focusMs)])}
         >
@@ -183,7 +183,7 @@ export function StatsScreen() {
 }
 
 function formatRatio(ratio: number): string {
-  return `${Math.round(ratio * 100)} %`
+  return `${Math.round(ratio * 100)}%`
 }
 
 function Stat({
@@ -219,11 +219,11 @@ function Metric({ label, value }: { label: string; value: number }) {
 function EmptyStats() {
   return (
     <div className="border-ink-800 mx-auto mt-16 max-w-md rounded-xl border border-dashed p-8 text-center">
-      <h1 className="text-lg font-medium">Rien à montrer pour l’instant</h1>
+      <h1 className="text-lg font-medium">Nothing to show yet</h1>
       <p className="text-ink-600 mt-3 text-sm">
-        Termine un premier focus et cette page se remplira : minutes par jour, série de jours,
-        heures les plus productives, interruptions, et l’écart entre ce que tu estimes et ce que tu
-        passes réellement.
+        Finish your first focus session and this page fills up: minutes per day, your streak, the
+        hours you actually get things done, interruptions, and the gap between what you estimate and
+        what you really spend.
       </p>
     </div>
   )

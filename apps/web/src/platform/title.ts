@@ -25,7 +25,7 @@ export function useDocumentTitle(): void {
   useEffect(() => {
     const remaining = remainingMs(timer, now)
     if (!live || remaining === null) {
-      document.title = timer.status === 'paused' ? 'En pause — basilico' : 'basilico'
+      document.title = timer.status === 'paused' ? 'Paused — basilico' : 'basilico'
     } else {
       const clock = formatClock(Math.abs(remaining))
       const sign = remaining < 0 ? '+' : ''

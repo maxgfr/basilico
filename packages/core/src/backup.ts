@@ -89,7 +89,7 @@ export function parseBackup(input: unknown): ParseResult {
     try {
       data = JSON.parse(input)
     } catch {
-      return { ok: false, error: "Ce fichier n'est pas du JSON valide." }
+      return { ok: false, error: 'This file is not valid JSON.' }
     }
   }
 
@@ -100,15 +100,15 @@ export function parseBackup(input: unknown): ParseResult {
     return {
       ok: false,
       error: where
-        ? `Sauvegarde illisible : champ « ${where} » invalide.`
-        : "Ce fichier n'est pas une sauvegarde basilico.",
+        ? `Unreadable backup: the "${where}" field is invalid.`
+        : 'This file is not a basilico backup.',
     }
   }
 
   if (parsed.data.version > BACKUP_VERSION) {
     return {
       ok: false,
-      error: `Cette sauvegarde vient d'une version plus récente (v${parsed.data.version}). Mets basilico à jour avant de l'importer.`,
+      error: `This backup comes from a newer version (v${parsed.data.version}). Update basilico before importing it.`,
     }
   }
 

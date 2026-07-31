@@ -6,7 +6,7 @@ type Props = { done: number; estimated: number }
  */
 export function Pomodoros({ done, estimated }: Props) {
   const slots = Math.max(estimated, done)
-  const label = `${done} pomodoro${done > 1 ? 's' : ''} sur ${estimated} estimé${estimated > 1 ? 's' : ''}`
+  const label = `${done} of ${estimated} estimated pomodoro${estimated > 1 ? 's' : ''}`
 
   return (
     <span className="flex items-center gap-1.5" title={label}>

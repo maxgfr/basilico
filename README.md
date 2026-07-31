@@ -1,122 +1,124 @@
 # basilico
 
 [![CI](https://github.com/maxgfr/basilico/actions/workflows/ci.yml/badge.svg)](https://github.com/maxgfr/basilico/actions/workflows/ci.yml)
-[![Licence MIT](https://img.shields.io/badge/licence-MIT-blue.svg)](LICENSE)
+[![MIT licence](https://img.shields.io/badge/licence-MIT-blue.svg)](LICENSE)
 
-### **[→ Ouvrir l'application](https://maxgfr.github.io/basilico/)**
+### **[→ Open the app](https://maxgfr.github.io/basilico/)**
 
-Un minuteur de focus basé sur la technique Pomodoro®, avec des tâches, des alertes et de vraies
-statistiques. Tout est local : pas de compte, pas de serveur, pas de tracking, pas de publicité.
+A focus timer built on the Pomodoro Technique®, with tasks, alerts and stats that are actually worth
+reading. Everything stays on your machine: no account, no server, no tracking, no ads.
 
-![L'écran principal de basilico : anneau de progression, tâches et compteur d'interruptions](docs/images/timer.png)
+![basilico's main screen: progress ring, task list and interruption counter](docs/images/timer.png)
 
-## Pourquoi encore un minuteur
+## Why another timer
 
-Le minuteur est un problème résolu. Ce qui manque partout, c'est ce qui vient après : l'historique,
-les rapports, et la possibilité de récupérer ses données. basilico met l'accent là-dessus.
+The timer itself is a solved problem. What's missing everywhere is what comes after it: the history,
+the reports, and being able to get your data back out. That's where basilico puts its effort.
 
-|                          |                                                                                                                                                                                                        |
-| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **Statistiques**         | Heatmap sur un an, série de jours, répartition par tâche et par tag, heures les plus productives, et la précision de tes estimations — l'objectif III de Cirillo, que presque aucun outil ne restitue. |
-| **Interruptions**        | Comptées comme dans la méthode originale : internes (`'`) et externes (`-`). Un focus définitivement interrompu est annulé, pas comptabilisé à moitié.                                                 |
-| **Overtime et Flowtime** | Le compteur peut continuer au-delà de zéro, ou tourner en chronomètre libre avec une pause proportionnelle. Pour ceux que l'arrêt net à 25 minutes sort de leur flow.                                  |
-| **Affichage réglable**   | Exact, approché (« environ 24 minutes »), pourcentage, ou caché. Regarder les secondes s'égrener angoisse beaucoup de gens.                                                                            |
-| **Export et import**     | JSON, CSV et [Open Pomodoro Format](https://github.com/open-pomodoro), en libre-service. Tes données t'appartiennent.                                                                                  |
-| **Fenêtre flottante**    | Le minuteur détaché en petite fenêtre toujours au-dessus, via l'API Document Picture-in-Picture (Chromium).                                                                                            |
-| **Hors ligne**           | Installable en PWA, fonctionne sans réseau.                                                                                                                                                            |
+|                           |                                                                                                                                                                                                        |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Stats**                 | A year-long heatmap, your streak, time per task and per tag, the hours you're actually productive, and how accurate your estimates are — Cirillo's third objective, which almost no tool reports back. |
+| **Interruptions**         | Counted the way the original method does: internal (`'`) and external (`-`). A focus session you truly abandon is voided, not counted as half a pomodoro.                                              |
+| **Overtime and Flowtime** | The counter can run past zero, or run as a free stopwatch with a break sized from what you worked. For people whose flow a hard stop at 25 minutes breaks.                                             |
+| **Adjustable display**    | Exact, rough ("about 24 minutes"), percentage, or hidden. Watching seconds tick down makes a lot of people anxious.                                                                                    |
+| **Endless by default**    | Breaks and focus sessions start themselves, so the cycle runs on its own until you stop it.                                                                                                            |
+| **Export and import**     | JSON, CSV and [Open Pomodoro Format](https://github.com/open-pomodoro), free and in the open. Your data is yours.                                                                                      |
+| **Offline**               | Installable as a PWA, works with no network.                                                                                                                                                           |
 
-![Les statistiques : quatorze jours, heatmap annuelle, heures productives, interruptions et précision d'estimation](docs/images/stats.png)
+![The stats page: fourteen days, year heatmap, productive hours, interruptions and estimate accuracy](docs/images/stats.png)
 
-<sub>Les captures utilisent des données de démonstration générées, pas de vraies sessions.</sub>
+<sub>Screenshots use generated demo data, not real sessions.</sub>
 
-## Ce qu'il faut savoir avant de s'en servir
+## What you should know before relying on it
 
-Ce sont les reproches classiques faits aux minuteurs web. Autant les dire franchement.
+These are the usual complaints about web-based timers. Better said upfront.
 
-- **Sans onglet ouvert, pas de notification.** Le Web Push exige un serveur et des clés VAPID, qu'on
-  n'a pas par choix ; l'API qui aurait résolu ça sans serveur (Notification Triggers) a été
-  abandonnée par Chrome. Deux réponses : l'app **rattrape** le temps écoulé à ton retour — la session
-  est enregistrée à sa vraie heure de fin, avec un « terminé il y a X minutes » — et
-  [l'extension Chrome](#extension-chrome) couvre vraiment le cas de l'onglet fermé.
-- **Les données vivent dans ton navigateur.** Vider les données du site les efface. Safari supprime
-  en plus tout le stockage des sites non visités depuis 7 jours. L'app demande le stockage persistant
-  et propose l'export en un clic — fais-en.
-- **Pas de synchronisation.** Un navigateur, un historique. L'export/import sert à changer de machine.
+- **No notification once the tab is closed.** Web Push needs a server and VAPID keys, which this
+  project deliberately doesn't have; the API that would have solved it without one (Notification
+  Triggers) was abandoned by Chrome. Two answers: basilico **catches up** when you come back — the
+  session is recorded at its real end time, with an "ended 15 minutes ago" note — and the
+  [Chrome extension](#chrome-extension) genuinely covers the closed-tab case.
+- **Your data lives in your browser.** Clearing site data wipes it. Safari additionally deletes all
+  storage for sites you haven't visited in 7 days. The app asks for persistent storage and offers a
+  one-click export — use it.
+- **No sync.** One browser, one history. Export and import to move to another machine.
 
-## Extension Chrome
+## Chrome extension
 
-Sans elle, aucune notification ne peut partir quand l'onglet est fermé. L'extension pose une vraie
-alarme système, qui survit à la fermeture de l'onglet et à la mise en veille du service worker.
+Without it, no notification can fire once the tab is closed. The extension sets a real system alarm
+that survives both the tab closing and the service worker going to sleep.
 
-Elle est délibérément **un notificateur, pas un second minuteur** : l'application reste la seule
-source de vérité et lui annonce simplement son échéance. Deux minuteurs indépendants finiraient par
-diverger, et il faudrait arbitrer lequel a raison.
+It is deliberately **a notifier, not a second timer**: the app stays the single source of truth and
+simply announces its deadline. Two independent timers would drift apart, and you would then have to
+decide which one is right.
 
-```bash
-pnpm --filter @basilico/extension build
-```
+**Install it**
 
-Puis, dans Chrome : `chrome://extensions` → activer le mode développeur → **Charger l'extension non
-empaquetée** → choisir `apps/extension/dist`. Recharge l'onglet basilico : les réglages affichent
-« Extension Chrome — Détectée ».
+1. Download `basilico-extension.zip` from the
+   [latest release](https://github.com/maxgfr/basilico/releases/latest) — or, for a build of any
+   commit, from the **basilico-extension** artifact at the bottom of a
+   [CI run](https://github.com/maxgfr/basilico/actions/workflows/ci.yml).
+2. Unzip it somewhere you will keep it — Chrome loads the extension from that folder, so don't
+   delete it afterwards.
+3. Open `chrome://extensions` and turn on **Developer mode** (top right).
+4. Click **Load unpacked** and select the unzipped folder.
+5. Reload [basilico](https://maxgfr.github.io/basilico/). Settings → Alerts now reads
+   _Chrome extension · Installed_.
 
-Elle n'est pas publiée au Chrome Web Store pour l'instant (compte développeur payant et délai de
-revue). Le dialogue avec la page passe par un content script limité à l'origine de l'application ;
-l'extension ne lit rien d'autre.
+Prefer building it yourself? `pnpm --filter @basilico/extension build` produces the same folder at
+`apps/extension/dist`, which you can load directly at step 4.
 
-## Raccourcis clavier
+It isn't on the Chrome Web Store for now (paid developer account and review delay). The bridge to
+the page is a content script restricted to the app's own origin; the extension reads nothing else.
 
-| Touche    | Action                                     |
-| --------- | ------------------------------------------ |
-| `Espace`  | Démarrer ou mettre en pause                |
-| `R`       | Réinitialiser la phase                     |
-| `S`       | Passer à la phase suivante                 |
-| `I` / `E` | Compter une interruption interne / externe |
-| `T`       | Aller aux statistiques                     |
+## Keyboard shortcuts
 
-## Développement
+| Key       | Action                                  |
+| --------- | --------------------------------------- |
+| `Space`   | Start or pause                          |
+| `R`       | Reset the current phase                 |
+| `S`       | Skip to the next phase                  |
+| `I` / `E` | Log an internal / external interruption |
+| `T`       | Go to stats                             |
+
+## Development
 
 ```bash
 pnpm install
 pnpm dev          # http://localhost:5173
-pnpm test         # noyau + composants
+pnpm test         # core + components
 pnpm typecheck
 pnpm lint
 pnpm build
 ```
 
-Monorepo pnpm :
+A pnpm monorepo:
 
-- **`packages/core`** — le domaine : minuteur, cycles, sessions, tâches, statistiques, sauvegardes.
-  TypeScript pur, aucune dépendance au DOM, testé avec une horloge injectée plutôt qu'avec de vraies
-  attentes.
-- **`apps/web`** — l'interface React et les adaptateurs navigateur (notifications, audio, stockage,
+- **`packages/core`** — the domain: timer, cycles, sessions, tasks, stats, backups. Plain
+  TypeScript, no DOM at all, tested with an injected clock rather than real waiting.
+- **`apps/web`** — the React interface and the browser adapters (notifications, audio, storage,
   wake lock).
+- **`apps/extension`** — the Chrome MV3 extension.
 
-Le minuteur est piloté par une **échéance absolue** et jamais par un compteur décrémenté : le temps
-restant se recalcule à partir de l'horloge, ce qui le rend insensible au throttling des onglets en
-arrière-plan, à la mise en veille de la machine et au rechargement de la page. Les décisions de
-conception et leurs raisons sont dans [`docs/design.md`](docs/design.md).
+The timer is driven by an **absolute deadline**, never by a decremented counter: the remaining time
+is recomputed from the clock, which makes it immune to background-tab throttling, machine sleep and
+page reloads. Design decisions and the reasoning behind them live in
+[`docs/design.md`](docs/design.md).
 
-Les graphes sont du SVG écrit à la main : zéro dépendance, et chaque figure est doublée d'un tableau
-lisible au lecteur d'écran — ce qu'aucune bibliothèque de charts en canvas ne sait faire.
+Charts are hand-written SVG: zero dependencies, and every figure is paired with a screen-reader
+table — something no canvas charting library can offer.
 
-## Navigateurs
+## Browsers
 
 Chrome 111+, Firefox 128+, Safari 16.4+.
 
-## Pas encore fait
+## Contributing
 
-- **Interface en anglais** — le réglage `locale` existe déjà dans le schéma mais n'est pas branché
-  sur les textes ([#4](https://github.com/maxgfr/basilico/issues/4)).
-
-## Contribuer
-
-Les issues et les pull requests sont bienvenues — voir [CONTRIBUTING.md](CONTRIBUTING.md).
+Issues and pull requests are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Licence
 
 [MIT](LICENSE).
 
-Pomodoro® et The Pomodoro Technique® sont des marques déposées de Francesco Cirillo. basilico n'est
-ni affilié, ni associé, ni approuvé par Pomodoro®.
+Pomodoro® and The Pomodoro Technique® are registered trademarks of Francesco Cirillo. basilico is
+not affiliated with, associated with, or endorsed by Pomodoro®.

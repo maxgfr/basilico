@@ -21,22 +21,22 @@ describe('formatage du temps', () => {
   })
 
   it('reste vague en mode approximatif', () => {
-    expect(formatApproximate(24 * 60_000)).toBe('environ 24 minutes')
-    expect(formatApproximate(30_000)).toBe('moins d’une minute')
-    expect(formatApproximate(0)).toBe('terminé')
-    expect(formatApproximate(120 * 60_000)).toBe('environ 2 h')
+    expect(formatApproximate(24 * 60_000)).toBe('about 24 minutes')
+    expect(formatApproximate(30_000)).toBe('less than a minute')
+    expect(formatApproximate(0)).toBe('done')
+    expect(formatApproximate(120 * 60_000)).toBe('about 2h')
   })
 
   it('résume les durées de statistiques', () => {
     expect(formatDuration(0)).toBe('—')
     expect(formatDuration(45 * 60_000)).toBe('45 min')
-    expect(formatDuration(125 * 60_000)).toBe('2 h 05')
-    expect(formatDuration(120 * 60_000)).toBe('2 h')
+    expect(formatDuration(125 * 60_000)).toBe('2h 05')
+    expect(formatDuration(120 * 60_000)).toBe('2h')
   })
 
   it('dit depuis quand une session est terminée', () => {
-    expect(formatAgo(20_000)).toBe('à l’instant')
-    expect(formatAgo(12 * 60_000)).toBe('il y a 12 minutes')
-    expect(formatAgo(60 * 60_000)).toBe('il y a une heure')
+    expect(formatAgo(20_000)).toBe('just now')
+    expect(formatAgo(12 * 60_000)).toBe('12 minutes ago')
+    expect(formatAgo(60 * 60_000)).toBe('an hour ago')
   })
 })

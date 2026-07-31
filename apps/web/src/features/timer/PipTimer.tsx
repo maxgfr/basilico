@@ -28,7 +28,7 @@ export function PipTimer({ target }: { target: Window }) {
         type="button"
         onClick={() => toggle(Date.now())}
         className="focus-visible:outline-ink-300 grid place-items-center focus-visible:outline-2"
-        aria-label={timer.status === 'running' ? 'Mettre en pause' : 'Démarrer'}
+        aria-label={timer.status === 'running' ? 'Pause' : 'Start'}
       >
         <TimerRing
           mode={timer.mode}
@@ -40,7 +40,7 @@ export function PipTimer({ target }: { target: Window }) {
               {countingUp ? formatClock(value) : formatSigned(value)}
             </span>
             <span className="text-ink-600 text-[11px]">
-              {timer.status === 'paused' ? 'En pause' : MODE_LABEL[timer.mode]}
+              {timer.status === 'paused' ? 'Paused' : MODE_LABEL[timer.mode]}
             </span>
           </div>
         </TimerRing>

@@ -56,6 +56,17 @@ jobs:
       # (service worker module, alarmes, offscreen) n'échoue qu'à l'exécution.
       - run: pnpm --filter @basilico/extension build
       - run: pnpm --filter @basilico/extension e2e
+
+      # Le paquet chargeable est publié à chaque exécution : on peut l'installer
+      # depuis n'importe quel commit, sans attendre une release taguée.
+      - name: Package the extension
+        run: cd apps/extension/dist && zip -r ../../../basilico-extension.zip .
+      - uses: actions/upload-artifact@v7
+        with:
+          name: basilico-extension
+          path: basilico-extension.zip
+          retention-days: 30
+
       - uses: actions/upload-artifact@v7
         if: ${{ !cancelled() }}
         with:

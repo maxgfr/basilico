@@ -38,12 +38,12 @@ export const STORAGE_KEY = 'basilico:phase'
 
 export const MODE_LABEL: Record<Mode, string> = {
   focus: 'Focus',
-  shortBreak: 'Pause courte',
-  longBreak: 'Pause longue',
+  shortBreak: 'Short break',
+  longBreak: 'Long break',
 }
 
 export const NEXT_HINT: Record<Mode, string> = {
-  focus: 'Focus terminé — prends ta pause.',
-  shortBreak: 'Pause terminée — au travail.',
-  longBreak: 'Longue pause terminée — au travail.',
+  focus: 'Focus finished — take your break.',
+  shortBreak: 'Break over — back to work.',
+  longBreak: 'Long break over — back to work.',
 }

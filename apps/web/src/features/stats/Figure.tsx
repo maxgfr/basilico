@@ -37,7 +37,7 @@ export function Figure({ title, summary, columns, rows, children, action }: Prop
         className="focus-visible:outline-ink-300 overflow-x-auto rounded focus-visible:outline-2 focus-visible:outline-offset-4"
         tabIndex={0}
         role="group"
-        aria-label={`${title} — graphique défilant`}
+        aria-label={`${title} — scrollable chart`}
       >
         {children}
       </div>

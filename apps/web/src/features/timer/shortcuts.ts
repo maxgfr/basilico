@@ -4,13 +4,12 @@ import { sound } from '../../platform/sound'
 import { navigate } from '../../lib/router'
 
 export const SHORTCUTS = [
-  { keys: 'Espace', label: 'Démarrer ou mettre en pause' },
-  { keys: 'R', label: 'Réinitialiser la phase' },
-  { keys: 'S', label: 'Passer à la phase suivante' },
-  { keys: 'I', label: 'Compter une interruption interne' },
-  { keys: 'E', label: 'Compter une interruption externe' },
-  { keys: 'T', label: 'Aller aux statistiques' },
-  { keys: '?', label: 'Afficher les raccourcis' },
+  { keys: 'Space', label: 'Start or pause' },
+  { keys: 'R', label: 'Reset the current phase' },
+  { keys: 'S', label: 'Skip to the next phase' },
+  { keys: 'I', label: 'Log an internal interruption' },
+  { keys: 'E', label: 'Log an external interruption' },
+  { keys: 'T', label: 'Go to stats' },
 ] as const
 
 /** Vrai quand l'utilisateur est en train de taper : on ne détourne pas ses touches. */

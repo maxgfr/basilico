@@ -50,12 +50,12 @@ export function TimerScreen() {
           className="border-ink-800 bg-ink-900 text-ink-300 flex max-w-md items-center gap-3 rounded-xl border px-4 py-3 text-sm"
         >
           <span>
-            Ton {MODE_LABEL[missed.record.mode].toLowerCase()} s’est terminé{' '}
-            <strong className="text-ink-100 font-medium">{formatAgo(missed.lateByMs)}</strong>. La
-            session a bien été enregistrée à la bonne heure.
+            Your {MODE_LABEL[missed.record.mode].toLowerCase()} ended{' '}
+            <strong className="text-ink-100 font-medium">{formatAgo(missed.lateByMs)}</strong>. The
+            session was recorded at the right time.
           </span>
           <Button variant="ghost" size="sm" onClick={dismissEnded}>
-            OK
+            Got it
           </Button>
         </div>
       )}
@@ -87,28 +87,28 @@ export function TimerScreen() {
 
       <div className="flex flex-wrap items-center justify-center gap-3">
         <Button variant="primary" size="lg" onClick={() => toggle(Date.now())}>
-          {timer.status === 'idle' && 'Démarrer'}
+          {timer.status === 'idle' && 'Start'}
           {timer.status === 'running' && 'Pause'}
-          {timer.status === 'overtime' && 'Arrêter'}
-          {timer.status === 'paused' && 'Reprendre'}
+          {timer.status === 'overtime' && 'Stop'}
+          {timer.status === 'paused' && 'Resume'}
         </Button>
         <Button
           variant="secondary"
           onClick={() => skipPhase(Date.now())}
           disabled={timer.status === 'idle'}
         >
-          Passer
+          Skip
         </Button>
         <Button
           variant="ghost"
           onClick={() => resetPhase(Date.now())}
           disabled={timer.status === 'idle'}
         >
-          Réinitialiser
+          Reset
         </Button>
         {pip.supported && (
           <Button variant="ghost" onClick={() => void pip.toggle()}>
-            {pip.window ? 'Fermer la fenêtre flottante' : 'Fenêtre flottante'}
+            {pip.window ? 'Close floating window' : 'Floating window'}
           </Button>
         )}
       </div>
@@ -120,21 +120,20 @@ export function TimerScreen() {
           <div className="flex flex-wrap items-center justify-center gap-2">
             <span className="text-ink-600 text-xs">Interruption</span>
             <Button variant="ghost" size="sm" onClick={() => interrupt('internal')}>
-              Interne{' '}
+              Internal{' '}
               <span className="text-ink-600 tabular">{timer.interruptions.internal || ''}</span>
             </Button>
             <Button variant="ghost" size="sm" onClick={() => interrupt('external')}>
-              Externe{' '}
+              External{' '}
               <span className="text-ink-600 tabular">{timer.interruptions.external || ''}</span>
             </Button>
           </div>
           <p className="text-ink-600 max-w-sm text-center text-xs">
-            Les interruptions se comptent sans arrêter le minuteur. Un focus définitivement
-            interrompu, lui, s’annule : il ne compte pas comme un pomodoro, mais le temps passé
-            reste dans tes statistiques.
+            Logging an interruption doesn’t stop the timer. Voiding a focus session does: it won’t
+            count as a pomodoro, but the time you spent still shows up in your stats.
           </p>
           <Button variant="danger" size="sm" onClick={() => voidPhase(Date.now())}>
-            Annuler ce focus
+            Void this focus
           </Button>
         </div>
       )}
@@ -153,15 +152,15 @@ function renderTime(
   if (mode === 'hidden') return '···'
   if (mode === 'percent') {
     const done = planned > 0 ? (countingUp ? value / planned : 1 - value / planned) : 0
-    return `${Math.min(100, Math.max(0, Math.round(done * 100)))} %`
+    return `${Math.min(100, Math.max(0, Math.round(done * 100)))}%`
   }
   if (mode === 'approximate') return formatApproximate(Math.max(0, value))
   return countingUp ? formatClock(value) : formatSigned(value)
 }
 
 function statusLabel(status: string): string {
-  if (status === 'running') return 'en cours'
-  if (status === 'paused') return 'en pause'
-  if (status === 'overtime') return 'temps dépassé'
-  return 'à l’arrêt'
+  if (status === 'running') return 'running'
+  if (status === 'paused') return 'paused'
+  if (status === 'overtime') return 'past the deadline'
+  return 'stopped'
 }

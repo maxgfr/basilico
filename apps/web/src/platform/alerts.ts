@@ -7,9 +7,9 @@ import { useApp } from '../store/app'
 import { MODE_LABEL } from '../lib/format'
 
 const NEXT_LABEL = {
-  focus: 'Au travail.',
-  shortBreak: 'Cinq minutes pour souffler.',
-  longBreak: 'Longue pause : lève-toi vraiment.',
+  focus: 'Back to work.',
+  shortBreak: 'Five minutes to breathe.',
+  longBreak: 'Long break — actually get up.',
 } as const
 
 /**
@@ -91,7 +91,7 @@ export function useAlerts(): void {
       if (settings.notifications.enabled) {
         const finished = MODE_LABEL[event.record.mode]
         const next = useApp.getState().timer.mode
-        void notify(`${finished} terminé`, NEXT_LABEL[next])
+        void notify(`${finished} finished`, NEXT_LABEL[next])
       }
     }
   }, [pending, drainEvents, settings.sound, settings.notifications.enabled])

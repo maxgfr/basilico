@@ -6,9 +6,9 @@ import { useEffect, useState } from 'react'
  * l'identique en local, sous `/basilico/`, et dans la fenêtre PWA installée.
  */
 export const ROUTES = {
-  timer: { hash: '#/', label: 'Minuteur' },
-  stats: { hash: '#/stats', label: 'Statistiques' },
-  settings: { hash: '#/reglages', label: 'Réglages' },
+  timer: { hash: '#/', label: 'Timer' },
+  stats: { hash: '#/stats', label: 'Stats' },
+  settings: { hash: '#/settings', label: 'Settings' },
 } as const
 
 export type RouteName = keyof typeof ROUTES

@@ -9,27 +9,30 @@ test.beforeEach(async ({ page }) => {
   await page.goto('/')
 })
 
-test('un focus complet crédite la tâche et remplit les statistiques', async ({ page }) => {
-  await page.getByLabel('Titre de la tâche').fill('Écrire le noyau')
-  await page.getByRole('button', { name: 'Ajouter' }).click()
+test('a completed focus credits the task and fills the stats', async ({ page }) => {
+  await page.getByLabel('Task title').fill('Write the core')
+  await page.getByRole('button', { name: 'Add' }).click()
 
-  await page.getByRole('button', { name: 'Démarrer' }).click()
+  await page.getByRole('button', { name: 'Start' }).click()
   await expect(page.getByRole('timer')).toContainText('24:5')
 
   await page.clock.fastForward('25:01')
 
   // La pause s'enchaîne, et la session vient d'être enregistrée.
   await expect(page.getByRole('timer')).toContainText('04:5')
-  await expect(page.getByRole('timer')).toHaveAccessibleName(/Pause courte/)
-  await expect(page.getByTitle(/1 pomodoro sur 1/).first()).toBeVisible()
+  await expect(page.getByRole('timer')).toHaveAccessibleName(/Short break/)
+  await expect(page.getByTitle(/1 of 1 estimated/).first()).toBeVisible()
 
-  await page.getByRole('link', { name: 'Statistiques' }).click()
-  await expect(page.getByText('Pomodoros aujourd’hui')).toBeVisible()
-  await expect(page.getByRole('table', { name: /Quatorze derniers jours/ })).toBeAttached()
+  await page
+    .getByRole('navigation', { name: 'Sections', exact: true })
+    .getByRole('link', { name: 'Stats' })
+    .click()
+  await expect(page.getByText('Pomodoros today')).toBeVisible()
+  await expect(page.getByRole('table', { name: /Last fourteen days/ })).toBeAttached()
 })
 
-test('l’état survit à un rechargement et le temps continue de courir', async ({ page }) => {
-  await page.getByRole('button', { name: 'Démarrer' }).click()
+test('state survives a reload and time keeps running', async ({ page }) => {
+  await page.getByRole('button', { name: 'Start' }).click()
   await page.clock.fastForward('05:00')
   await page.reload()
 
@@ -38,43 +41,49 @@ test('l’état survit à un rechargement et le temps continue de courir', async
   await expect(page.getByRole('button', { name: 'Pause' })).toBeVisible()
 })
 
-test('une session terminée pendant une absence est rattrapée', async ({ page }) => {
-  await page.getByRole('button', { name: 'Démarrer' }).click()
+test('a session that ended while away is caught up', async ({ page }) => {
+  await page.getByRole('button', { name: 'Start' }).click()
 
   // Quarante minutes passent : la session s'est terminée à son échéance, quinze
   // minutes plus tôt.
   await page.clock.fastForward('40:00')
 
-  await expect(page.getByText(/s’est terminé/)).toBeVisible()
-  await expect(page.getByText(/il y a 15 minutes/)).toBeVisible()
+  await expect(page.getByText(/ended/)).toBeVisible()
+  await expect(page.getByText(/15 minutes ago/)).toBeVisible()
   // Rien ne s'est enchaîné tout seul : la pause attend une décision.
-  await expect(page.getByRole('button', { name: 'Démarrer' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Start' })).toBeVisible()
 
   // Et le message survit au rechargement : c'est justement quelqu'un qui avait
   // fermé son onglet qui doit le lire.
   await page.reload()
-  await expect(page.getByText(/il y a 15 minutes/)).toBeVisible()
+  await expect(page.getByText(/15 minutes ago/)).toBeVisible()
 })
 
-test('export puis suppression puis import restituent l’état', async ({ page }) => {
-  await page.getByLabel('Titre de la tâche').fill('Tâche à sauvegarder')
-  await page.getByRole('button', { name: 'Ajouter' }).click()
+test('export then erase then import restores the state', async ({ page }) => {
+  await page.getByLabel('Task title').fill('Task to back up')
+  await page.getByRole('button', { name: 'Add' }).click()
 
-  await page.getByRole('link', { name: 'Réglages' }).click()
+  await page
+    .getByRole('navigation', { name: 'Sections', exact: true })
+    .getByRole('link', { name: 'Settings' })
+    .click()
   const download = await Promise.all([
     page.waitForEvent('download'),
-    page.getByRole('button', { name: 'Exporter en JSON' }).click(),
+    page.getByRole('button', { name: 'Export JSON' }).click(),
   ]).then(([event]) => event)
   const path = await download.path()
 
-  await page.getByRole('button', { name: 'Effacer' }).click()
-  await page.getByRole('button', { name: 'Confirmer la suppression' }).click()
-  await expect(page.getByText('Données effacées.')).toBeVisible()
+  await page.getByRole('button', { name: 'Erase' }).click()
+  await page.getByRole('button', { name: 'Yes, erase it all' }).click()
+  await expect(page.getByText('Data erased.')).toBeVisible()
 
-  await page.getByRole('button', { name: 'Choisir un fichier' }).click()
+  await page.getByRole('button', { name: 'Choose a file' }).click()
   await page.locator('input[type="file"]').setInputFiles(path)
-  await expect(page.getByText(/Importé : 0 sessions et 1 tâches/)).toBeVisible()
+  await expect(page.getByText(/Imported 0 sessions and 1 tasks/)).toBeVisible()
 
-  await page.getByRole('link', { name: 'Minuteur' }).click()
-  await expect(page.getByText('Tâche à sauvegarder')).toBeVisible()
+  await page
+    .getByRole('navigation', { name: 'Sections', exact: true })
+    .getByRole('link', { name: 'Timer' })
+    .click()
+  await expect(page.getByText('Task to back up')).toBeVisible()
 })

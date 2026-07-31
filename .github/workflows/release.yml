@@ -1,0 +1,43 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  extension:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @basilico/extension build
+
+      # Un zip du dossier `dist`, pas du dossier parent : Chrome attend un
+      # répertoire qui contient `manifest.json` à sa racine.
+      - name: Package the extension
+        run: cd apps/extension/dist && zip -r ../../../basilico-extension.zip .
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: basilico-extension.zip
+          generate_release_notes: true
+          body: |
+            ### Chrome extension
+
+            Download `basilico-extension.zip`, unzip it, then:
+
+            1. open `chrome://extensions`
+            2. turn on **Developer mode** (top right)
+            3. click **Load unpacked** and pick the unzipped folder
+
+            Reload [basilico](https://maxgfr.github.io/basilico/) — Settings shows
+            *Chrome extension · Installed*. Your sessions now ring even with the tab closed.

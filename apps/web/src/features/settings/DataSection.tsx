@@ -35,18 +35,19 @@ export function DataSection() {
     replaceAll(result.backup)
     setMessage({
       tone: 'ok',
-      text: `Importé : ${result.backup.sessions.length} sessions et ${result.backup.tasks.length} tâches.`,
+      text: `Imported ${result.backup.sessions.length} sessions and ${result.backup.tasks.length} tasks.`,
     })
   }
 
   return (
     <Section
-      title="Tes données"
-      description="Tout est stocké dans ce navigateur. Un export régulier est la seule vraie sauvegarde."
+      id="data"
+      title="Your data"
+      description="Everything lives in this browser. A regular export is the only real backup."
     >
       <Row
-        label="Sauvegarde complète"
-        hint="Réglages, tâches et historique. C’est ce fichier qu’on réimporte."
+        label="Full backup"
+        hint="Settings, tasks and history. This is the file you import back."
       >
         <Button
           onClick={() =>
@@ -57,23 +58,23 @@ export function DataSection() {
             )
           }
         >
-          Exporter en JSON
+          Export JSON
         </Button>
       </Row>
 
-      <Row label="Historique des sessions" hint="Pour un tableur : une ligne par session.">
+      <Row label="Session history" hint="For a spreadsheet: one row per session.">
         <Button
           variant="ghost"
           disabled={sessions.length === 0}
           onClick={() => download(`basilico-sessions-${stamp()}.csv`, toCsv(sessions), 'text/csv')}
         >
-          Exporter en CSV
+          Export CSV
         </Button>
       </Row>
 
       <Row
         label="Open Pomodoro Format"
-        hint="Interopérable avec les autres outils qui parlent ce format. Focus terminés uniquement."
+        hint="Interoperable with other tools that speak the format. Completed focus sessions only."
       >
         <Button
           variant="ghost"
@@ -86,17 +87,17 @@ export function DataSection() {
             )
           }
         >
-          Exporter
+          Export
         </Button>
       </Row>
 
-      <Row label="Importer" hint="Remplace intégralement les données actuelles.">
+      <Row label="Import" hint="Replaces everything currently stored.">
         <>
           <input
             ref={fileInput}
             type="file"
             accept="application/json,.json"
-            aria-label="Fichier de sauvegarde à importer"
+            aria-label="Backup file to import"
             className="sr-only"
             onChange={(e) => {
               const file = e.target.files?.[0]
@@ -104,7 +105,7 @@ export function DataSection() {
               e.target.value = ''
             }}
           />
-          <Button onClick={() => fileInput.current?.click()}>Choisir un fichier</Button>
+          <Button onClick={() => fileInput.current?.click()}>Choose a file</Button>
         </>
       </Row>
 
@@ -115,8 +116,8 @@ export function DataSection() {
       )}
 
       <Row
-        label="Tout effacer"
-        hint={`${sessions.length} sessions et ${tasks.length} tâches seront définitivement supprimées.`}
+        label="Erase everything"
+        hint={`${sessions.length} sessions and ${tasks.length} tasks would be deleted for good.`}
       >
         {confirmingReset ? (
           <div className="flex items-center gap-2">
@@ -125,18 +126,18 @@ export function DataSection() {
               onClick={() => {
                 clearEverything()
                 setConfirmingReset(false)
-                setMessage({ tone: 'ok', text: 'Données effacées.' })
+                setMessage({ tone: 'ok', text: 'Data erased.' })
               }}
             >
-              Confirmer la suppression
+              Yes, erase it all
             </Button>
             <Button variant="ghost" onClick={() => setConfirmingReset(false)}>
-              Annuler
+              Cancel
             </Button>
           </div>
         ) : (
           <Button variant="danger" onClick={() => setConfirmingReset(true)}>
-            Effacer
+            Erase
           </Button>
         )}
       </Row>

@@ -11,7 +11,7 @@ export function CyclePips({ done, total }: Props) {
     <span
       className="flex items-center gap-1.5"
       role="img"
-      aria-label={`${done} focus sur ${total}`}
+      aria-label={`${done} of ${total} focus sessions before the long break`}
     >
       {Array.from({ length: total }, (_, i) => (
         <span

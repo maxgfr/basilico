@@ -4,7 +4,7 @@ import { expect, test } from './fixtures'
 
 const DIST = resolve(import.meta.dirname, '../dist')
 
-test('le content script est autonome', () => {
+test('the content script is self-contained', () => {
   const code = readFileSync(`${DIST}/content.js`, 'utf8')
   // Un content script MV3 est injecté comme script classique : le moindre
   // `import` le ferait échouer silencieusement à l'exécution, et rien dans le
@@ -13,7 +13,7 @@ test('le content script est autonome', () => {
   expect(code).not.toMatch(/from\s*["']\.\//)
 })
 
-test('le service worker démarre et le manifeste est cohérent', async ({ background }) => {
+test('the service worker boots and the manifest is coherent', async ({ background }) => {
   const manifest = await background.evaluate(() => chrome.runtime.getManifest())
 
   expect(manifest.manifest_version).toBe(3)
@@ -24,7 +24,7 @@ test('le service worker démarre et le manifeste est cohérent', async ({ backgr
   expect(manifest.background?.type).toBe('module')
 })
 
-test('une échéance annoncée arme une alarme, et son annulation la retire', async ({
+test('an announced deadline arms an alarm, and clearing it removes the alarm', async ({
   extensionPage,
 }) => {
   const endsAt = Date.now() + 25 * 60_000
@@ -62,7 +62,7 @@ test('une échéance annoncée arme une alarme, et son annulation la retire', as
   expect(cleared.badge).toBe('')
 })
 
-test('une échéance déjà passée n’arme rien', async ({ extensionPage }) => {
+test('a deadline already in the past arms nothing', async ({ extensionPage }) => {
   const alarm = await extensionPage.evaluate(async () => {
     await chrome.runtime.sendMessage({
       source: 'basilico-app',
@@ -75,7 +75,7 @@ test('une échéance déjà passée n’arme rien', async ({ extensionPage }) =>
   expect(alarm).toBeUndefined()
 })
 
-test('l’alarme déclenche bien une notification', async ({ extensionPage, background }) => {
+test('the alarm actually fires a notification', async ({ extensionPage, background }) => {
   const notifications: string[] = []
   await background.evaluate(() => {
     // On observe l'appel plutôt que d'attendre une vraie notification système,
@@ -114,5 +114,5 @@ test('l’alarme déclenche bien une notification', async ({ extensionPage, back
     () => (globalThis as unknown as { __seen: string[] }).__seen,
   )
   notifications.push(...titles)
-  expect(notifications[0]).toBe('Focus terminé')
+  expect(notifications[0]).toBe('Focus finished')
 })

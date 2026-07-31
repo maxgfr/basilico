@@ -18,7 +18,7 @@ export function TaskList() {
     <section aria-labelledby="tasks-heading" className="flex w-full flex-col gap-4">
       <div className="flex items-baseline justify-between">
         <h2 id="tasks-heading" className="text-sm font-medium tracking-wide uppercase">
-          Tâches
+          Tasks
         </h2>
         {open.length > 0 && (
           <span className="text-ink-600 tabular text-xs">
@@ -50,7 +50,7 @@ export function TaskList() {
       {done.length > 0 && (
         <details className="text-ink-600 text-sm">
           <summary className="hover:text-ink-300 cursor-pointer select-none">
-            {done.length} terminée{done.length > 1 ? 's' : ''}
+            {done.length} done
           </summary>
           <ul className="mt-2 flex flex-col gap-1">
             {done.map((task, index) => (
@@ -73,10 +73,10 @@ export function TaskList() {
 function EmptyTasks() {
   return (
     <div className="border-ink-800 text-ink-600 rounded-xl border border-dashed p-6 text-sm">
-      <p className="text-ink-300">Rien à faire pour l’instant.</p>
+      <p className="text-ink-300">Nothing to work on yet.</p>
       <p className="mt-2">
-        Ajoute une tâche et estime-la en pomodoros. À la fin de chaque focus, basilico crédite la
-        tâche active — c’est ce qui alimente les statistiques et la précision de tes estimations.
+        Add a task and estimate it in pomodoros. Each finished focus credits the active task —
+        that’s what fills your stats and tells you how accurate your estimates really are.
       </p>
     </div>
   )
@@ -106,7 +106,7 @@ function TaskRow({ task, index, count, active, onActivate }: RowProps) {
         type="checkbox"
         checked={isDone}
         onChange={() => setStatus(task.id, isDone ? 'active' : 'done', Date.now())}
-        aria-label={isDone ? `Rouvrir ${task.title}` : `Terminer ${task.title}`}
+        aria-label={isDone ? `Reopen ${task.title}` : `Complete ${task.title}`}
         className="accent-focus size-4 shrink-0 cursor-pointer"
       />
 
@@ -133,7 +133,7 @@ function TaskRow({ task, index, count, active, onActivate }: RowProps) {
         <Button
           variant="ghost"
           size="sm"
-          aria-label={`Monter ${task.title}`}
+          aria-label={`Move ${task.title} up`}
           disabled={index === 0}
           onClick={() => moveTask(task.id, index - 1)}
         >
@@ -142,7 +142,7 @@ function TaskRow({ task, index, count, active, onActivate }: RowProps) {
         <Button
           variant="ghost"
           size="sm"
-          aria-label={`Descendre ${task.title}`}
+          aria-label={`Move ${task.title} down`}
           disabled={index === count - 1}
           onClick={() => moveTask(task.id, index + 1)}
         >
@@ -151,15 +151,15 @@ function TaskRow({ task, index, count, active, onActivate }: RowProps) {
         <Button
           variant="ghost"
           size="sm"
-          aria-label={`Archiver ${task.title}`}
+          aria-label={`Archive ${task.title}`}
           onClick={() => setStatus(task.id, 'archived', Date.now())}
         >
-          Archiver
+          Archive
         </Button>
         <Button
           variant="danger"
           size="sm"
-          aria-label={`Supprimer ${task.title}`}
+          aria-label={`Delete ${task.title}`}
           onClick={() => dropTask(task.id)}
         >
           ✕
@@ -191,8 +191,8 @@ function AddTaskForm({
       <input
         value={title}
         onChange={(e) => setTitle(e.target.value)}
-        placeholder="Sur quoi travailles-tu ?"
-        aria-label="Titre de la tâche"
+        placeholder="What are you working on?"
+        aria-label="Task title"
         className="border-ink-800 bg-ink-900 placeholder:text-ink-600 focus:border-ink-600 h-10 min-w-0 flex-1 rounded-lg border px-3 text-sm outline-none"
       />
       <input
@@ -201,16 +201,16 @@ function AddTaskForm({
         max={20}
         value={estimate}
         onChange={(e) => setEstimate(Math.max(1, Number(e.target.value) || 1))}
-        aria-label="Pomodoros estimés"
-        title="Pomodoros estimés"
+        aria-label="Estimated pomodoros"
+        title="Estimated pomodoros"
         className="border-ink-800 bg-ink-900 tabular focus:border-ink-600 h-10 w-12 shrink-0 rounded-lg border px-1 text-center text-sm outline-none"
       />
-      {/* Bouton compact : dans une colonne de 20 rem, « Ajouter » en toutes
-          lettres forçait le formulaire à passer sur deux lignes. */}
+      {/* Bouton compact : dans une colonne de 20 rem, « Add » en toutes lettres
+          forçait le formulaire à passer sur deux lignes. */}
       <Button
         type="submit"
         variant="secondary"
-        aria-label="Ajouter"
+        aria-label="Add"
         disabled={title.trim() === ''}
         className="shrink-0 px-3 text-lg"
       >

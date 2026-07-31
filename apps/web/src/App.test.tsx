@@ -24,18 +24,18 @@ afterEach(() => {
   window.location.hash = ''
 })
 
-describe('écran principal', () => {
-  it('affiche le minuteur prêt à démarrer', () => {
+describe('main screen', () => {
+  it('shows the timer ready to start', () => {
     render(<App />)
     expect(screen.getByRole('timer')).toHaveTextContent('25:00')
-    expect(screen.getByRole('button', { name: 'Démarrer' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Start' })).toBeInTheDocument()
   })
 
-  it('démarre puis met en pause', async () => {
+  it('starts then pauses', async () => {
     const user = userEvent.setup()
     render(<App />)
 
-    await user.click(screen.getByRole('button', { name: 'Démarrer' }))
+    await user.click(screen.getByRole('button', { name: 'Start' }))
     expect(useApp.getState().timer.status).toBe('running')
     expect(screen.getByRole('button', { name: 'Pause' })).toBeInTheDocument()
 
@@ -43,25 +43,25 @@ describe('écran principal', () => {
     expect(useApp.getState().timer.status).toBe('paused')
   })
 
-  it('ajoute une tâche, la rend active et la rattache à la session', async () => {
+  it('adds a task, makes it active and attributes the session to it', async () => {
     const user = userEvent.setup()
     render(<App />)
 
-    await user.type(screen.getByLabelText('Titre de la tâche'), 'Écrire le noyau')
-    await user.click(screen.getByRole('button', { name: 'Ajouter' }))
+    await user.type(screen.getByLabelText('Task title'), 'Write the core')
+    await user.click(screen.getByRole('button', { name: 'Add' }))
 
     const tasks = useApp.getState().tasks
     expect(tasks).toHaveLength(1)
     expect(useApp.getState().activeTaskId).toBe(tasks[0]?.id)
 
-    await user.click(screen.getByRole('button', { name: 'Démarrer' }))
+    await user.click(screen.getByRole('button', { name: 'Start' }))
     expect(useApp.getState().timer.taskId).toBe(tasks[0]?.id)
   })
 
-  it('persiste l’état dans une clé préfixée par le projet', async () => {
+  it('persists state under a project-prefixed key', async () => {
     const user = userEvent.setup()
     render(<App />)
-    await user.click(screen.getByRole('button', { name: 'Démarrer' }))
+    await user.click(screen.getByRole('button', { name: 'Start' }))
 
     const raw = localStorage.getItem(STORAGE_KEY)
     expect(raw).not.toBeNull()
@@ -73,10 +73,10 @@ describe('écran principal', () => {
   })
 })
 
-describe('statistiques', () => {
-  it('explique quoi faire tant qu’aucune session n’existe', () => {
+describe('stats', () => {
+  it('explains what to do while there is no session yet', () => {
     window.location.hash = '#/stats'
     render(<App />)
-    expect(screen.getByRole('heading', { name: /Rien à montrer/ })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: /Nothing to show/ })).toBeInTheDocument()
   })
 })

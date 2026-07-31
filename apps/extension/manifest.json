@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "basilico — alertes de focus",
+  "name": "basilico — focus alerts",
   "version": "0.1.0",
-  "description": "Fait sonner et notifier tes sessions basilico même quand l'onglet est fermé.",
+  "description": "Rings and notifies your basilico sessions even when the tab is closed.",
   "minimum_chrome_version": "116",
   "icons": {
     "128": "icons/icon-128.png"
