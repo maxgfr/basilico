@@ -174,72 +174,104 @@ type RowProps = {
 
 /**
  * The row's actions, rendered in two places: over the row on pointer devices,
- * and inside a disclosure on touch ones. Same buttons, so they cannot drift.
+ * and inside a disclosure on touch ones. One list, so they cannot drift.
+ *
+ * The overlay is `icons`, because six text buttons measured ~385 px inside a
+ * 320 px column: the bar shrank to its min-content, spilled out of the aside and
+ * over the timer, and "To backlog" broke onto a second line inside a 32 px
+ * button. Glyphs bring the same six actions down to ~216 px, which fits. The
+ * disclosure keeps the words: it has a whole row's width and no hover to explain
+ * a symbol.
  */
-function RowActions({
-  task,
-  index,
-  count,
-  onEdit,
-}: {
-  task: Task
-  index: number
-  count: number
-  onEdit: () => void
-}) {
+type RowAction = {
+  key: string
+  label: string
+  icon: string
+  hint: string
+  danger?: boolean
+  disabled?: boolean
+  onClick: () => void
+}
+
+function useRowActions(task: Task, index: number, count: number, onEdit: () => void): RowAction[] {
   const setStatus = useApp((s) => s.setStatus)
   const dropTask = useApp((s) => s.dropTask)
   const moveTask = useApp((s) => s.moveTask)
   const plan = useApp((s) => s.planTask)
   const planned = task.plannedFor !== null
 
+  return [
+    {
+      key: 'plan',
+      label: planned ? 'To backlog' : 'Today',
+      icon: planned ? '↩' : '↪',
+      hint: planned ? `Move ${task.title} to the backlog` : `Plan ${task.title} for today`,
+      onClick: () => plan(task.id, planned ? null : dayKey(Date.now())),
+    },
+    {
+      key: 'up',
+      label: 'Move up',
+      icon: '↑',
+      hint: `Move ${task.title} up`,
+      disabled: index === 0,
+      onClick: () => moveTask(task.id, index - 1),
+    },
+    {
+      key: 'down',
+      label: 'Move down',
+      icon: '↓',
+      hint: `Move ${task.title} down`,
+      disabled: index === count - 1,
+      onClick: () => moveTask(task.id, index + 1),
+    },
+    {
+      key: 'rename',
+      label: 'Rename',
+      icon: '✎',
+      hint: `Rename ${task.title}`,
+      onClick: onEdit,
+    },
+    {
+      key: 'archive',
+      label: 'Archive',
+      icon: '⧉',
+      hint: `Archive ${task.title}`,
+      onClick: () => setStatus(task.id, 'archived', Date.now()),
+    },
+    {
+      key: 'delete',
+      label: 'Delete',
+      icon: '✕',
+      hint: `Delete ${task.title}`,
+      danger: true,
+      onClick: () => dropTask(task.id),
+    },
+  ]
+}
+
+function RowActions({ actions, as }: { actions: RowAction[]; as: 'icons' | 'labels' }) {
   return (
     <>
-      <Button
-        variant="ghost"
-        size="sm"
-        aria-label={planned ? `Move ${task.title} to the backlog` : `Plan ${task.title} for today`}
-        onClick={() => plan(task.id, planned ? null : dayKey(Date.now()))}
-      >
-        {planned ? 'To backlog' : 'Today'}
-      </Button>
-      <Button
-        variant="ghost"
-        size="sm"
-        aria-label={`Move ${task.title} up`}
-        disabled={index === 0}
-        onClick={() => moveTask(task.id, index - 1)}
-      >
-        ↑
-      </Button>
-      <Button
-        variant="ghost"
-        size="sm"
-        aria-label={`Move ${task.title} down`}
-        disabled={index === count - 1}
-        onClick={() => moveTask(task.id, index + 1)}
-      >
-        ↓
-      </Button>
-      <Button variant="ghost" size="sm" aria-label={`Rename ${task.title}`} onClick={onEdit}>
-        Rename
-      </Button>
-      <Button
-        variant="ghost"
-        size="sm"
-        aria-label={`Archive ${task.title}`}
-        onClick={() => setStatus(task.id, 'archived', Date.now())}
-      >
-        Archive
-      </Button>
-      <Button
-        variant="danger"
-        size="sm"
-        aria-label={`Delete ${task.title}`}
-        onClick={() => dropTask(task.id)}
-      >
-        ✕
-      </Button>
+      {actions.map((action) => (
+        <Button
+          key={action.key}
+          variant={action.danger ? 'danger' : 'ghost'}
+          size={as === 'icons' ? 'icon' : 'sm'}
+          aria-label={action.hint}
+          title={as === 'icons' ? action.hint : undefined}
+          // `aria-disabled`, not `disabled`: moving a task to the top disables
+          // the very button holding focus, the browser drops focus to <body>,
+          // and the bar this button lives in vanishes mid-click.
+          aria-disabled={action.disabled || undefined}
+          className={action.disabled ? 'cursor-not-allowed opacity-40' : ''}
+          onClick={() => {
+            if (action.disabled) return
+            action.onClick()
+          }}
+        >
+          {as === 'icons' ? <span aria-hidden="true">{action.icon}</span> : action.label}
+        </Button>
+      ))}
     </>
   )
 }
@@ -253,6 +285,14 @@ function TaskRow({ task, index, count, spentMs, active, onActivate }: RowProps) 
   const isDone = task.status === 'done'
   const panelId = `actions-${task.id}`
 
+  // Two lists rather than one: the disclosure has to close itself on rename,
+  // the overlay has nothing to close.
+  const hoverActions = useRowActions(task, index, count, () => setEditing(true))
+  const touchActions = useRowActions(task, index, count, () => {
+    setOpen(false)
+    setEditing(true)
+  })
+
   // Focus moved by hand rather than with `autoFocus`: the attribute is a usability
   // problem when a page loads with it, but here the field only appears because
   // the user asked to rename, and leaving focus behind would strand the keyboard.
@@ -263,7 +303,7 @@ function TaskRow({ task, index, count, spentMs, active, onActivate }: RowProps) 
 
   if (editing) {
     return (
-      <li className="bg-ink-900 rounded-lg px-3 py-2">
+      <li className="bg-ink-900 flex min-h-13 items-center rounded-lg px-3 py-2">
         <form
           onSubmit={(event) => {
             event.preventDefault()
@@ -292,9 +332,14 @@ function TaskRow({ task, index, count, spentMs, active, onActivate }: RowProps) 
   }
 
   return (
+    // `min-h`: the meta line only exists on some rows, and "12m spent" appears
+    // mid-session — without a floor the row grew 16 px under the cursor and the
+    // whole list jumped. It also matches the rename row, so editing sits still.
     <li
-      className={`group relative rounded-lg px-3 py-2 transition-colors duration-150 ${
-        active ? 'bg-ink-900 ring-focus/40 ring-1' : 'hover:bg-ink-900'
+      className={`group relative flex min-h-13 flex-col justify-center rounded-lg px-3 py-2 transition-colors duration-150 motion-reduce:transition-none ${
+        active
+          ? 'bg-ink-900 ring-focus/40 ring-1'
+          : 'hover:bg-ink-900 has-[:focus-visible]:bg-ink-900'
       }`}
     >
       <div className="flex items-center gap-3">
@@ -315,18 +360,23 @@ function TaskRow({ task, index, count, spentMs, active, onActivate }: RowProps) 
           <span className={`block truncate text-sm ${isDone ? 'text-ink-600 line-through' : ''}`}>
             {task.title}
           </span>
-          <span className="text-ink-600 flex flex-wrap items-center gap-x-2 text-xs">
-            {task.tag && <span>#{task.tag}</span>}
-            {spentMs > 0 && <span className="tabular">{formatDuration(spentMs)} spent</span>}
-            {needsBreakdown(task) && (
-              <span
-                className="text-long"
-                title="Cirillo: more than 5-7 pomodoros means it is really several tasks"
-              >
-                too big — break it down
-              </span>
-            )}
-          </span>
+          {/* Rendered only when it has something to say: an empty flex box still
+              costs its own line box, and the row would size differently for no
+              visible reason. */}
+          {(task.tag || spentMs > 0 || needsBreakdown(task)) && (
+            <span className="text-ink-600 flex flex-wrap items-center gap-x-2 text-xs">
+              {task.tag && <span>#{task.tag}</span>}
+              {spentMs > 0 && <span className="tabular">{formatDuration(spentMs)} spent</span>}
+              {needsBreakdown(task) && (
+                <span
+                  className="text-long"
+                  title="Cirillo: more than 5-7 pomodoros means it is really several tasks"
+                >
+                  too big — break it down
+                </span>
+              )}
+            </span>
+          )}
         </button>
 
         <Pomodoros done={task.completedPomodoros} estimated={task.estimatedPomodoros} />
@@ -353,15 +403,7 @@ function TaskRow({ task, index, count, spentMs, active, onActivate }: RowProps) 
 
       {!hoverCapable && open && (
         <div id={panelId} className="mt-1 flex flex-wrap items-center gap-1">
-          <RowActions
-            task={task}
-            index={index}
-            count={count}
-            onEdit={() => {
-              setOpen(false)
-              setEditing(true)
-            }}
-          />
+          <RowActions actions={touchActions} as="labels" />
         </div>
       )}
 
@@ -369,10 +411,25 @@ function TaskRow({ task, index, count, spentMs, active, onActivate }: RowProps) 
         Actions sit on top of the row rather than beside it: in a narrow column,
         keeping them in the flow clipped task titles down to "R...". The gradient
         blends the overlay into the row background.
+
+        Mounted always and faded with opacity rather than flipped from `hidden`:
+        `display` cannot transition, so the opaque panel used to land instantly
+        on a row background still 150 ms into its own fade — a seam that read as
+        a glitch. `pointer-events-none` while hidden keeps the title clickable.
+
+        `has-[:focus-visible]` rather than `focus-within`: the latter fires on
+        click focus too, so selecting a task left the bar pinned over the title
+        it had just covered. Keyboard focus still opens it.
       */}
       {hoverCapable && (
-        <div className="from-ink-900 via-ink-900 absolute inset-y-0 right-0 hidden items-center rounded-r-lg bg-gradient-to-l to-transparent pr-1 pl-8 group-focus-within:flex group-hover:flex">
-          <RowActions task={task} index={index} count={count} onEdit={() => setEditing(true)} />
+        <div className="pointer-events-none absolute inset-y-0 right-0 z-10 flex items-stretch opacity-0 transition-opacity duration-150 group-hover:pointer-events-auto group-hover:opacity-100 group-has-[:focus-visible]:pointer-events-auto group-has-[:focus-visible]:opacity-100 motion-reduce:transition-none">
+          {/* The fade is its own fixed-width strip rather than a gradient across
+              the whole bar: spread over the buttons, its midpoint fell under the
+              first two icons and the task title read straight through them. */}
+          <span aria-hidden="true" className="from-ink-900/0 to-ink-900 w-8 bg-gradient-to-r" />
+          <span className="bg-ink-900 flex items-center gap-1 rounded-r-lg pr-1">
+            <RowActions actions={hoverActions} as="icons" />
+          </span>
         </div>
       )}
     </li>

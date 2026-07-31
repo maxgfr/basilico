@@ -15,7 +15,7 @@ export function Pomodoros({ done, estimated }: Props) {
   const label = `${done} of ${estimated} estimated pomodoro${estimated > 1 ? 's' : ''}`
 
   return (
-    <span className="flex items-center gap-1.5" title={label}>
+    <span className="flex shrink-0 items-center gap-1.5" title={label}>
       <span className="flex items-center gap-1" role="img" aria-label={label}>
         {Array.from({ length: Math.min(slots, MAX_DOTS) }, (_, i) => (
           <span
