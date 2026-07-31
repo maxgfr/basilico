@@ -76,9 +76,19 @@ export function Toggle({
           checked ? 'bg-focus' : 'bg-ink-800'
         }`}
       >
+        {/*
+          `left-0` is load-bearing. Without a horizontal anchor an absolutely
+          positioned box falls back to its static position, and a <button>
+          centres its content — so the knob started mid-track and the translate
+          pushed it clean off the right edge, in both states.
+
+          The knob is white only when on: on the light theme's pale off-track a
+          white knob would all but vanish, so it takes a mid grey that reads
+          against the track in either theme.
+        */}
         <span
-          className={`bg-ink-100 absolute top-1 size-4 rounded-full transition-transform duration-150 motion-reduce:transition-none ${
-            checked ? 'translate-x-6' : 'translate-x-1'
+          className={`absolute top-1 left-0 size-4 rounded-full transition-transform duration-150 motion-reduce:transition-none ${
+            checked ? 'translate-x-6 bg-white' : 'bg-ink-600 translate-x-1'
           }`}
         />
       </button>

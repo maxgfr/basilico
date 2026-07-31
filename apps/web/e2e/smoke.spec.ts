@@ -111,3 +111,33 @@ test('row actions are reachable on both pointer kinds', async ({ page }, testInf
     await expect(rename).toBeVisible()
   }
 })
+
+test('switch knobs stay inside their track', async ({ page }) => {
+  await page.goto('/#/settings')
+
+  const geometry = () =>
+    page.evaluate(() =>
+      [...document.querySelectorAll('[role=switch]')].map((sw) => {
+        const track = sw.getBoundingClientRect()
+        const knob = (sw.firstElementChild as HTMLElement).getBoundingClientRect()
+        return { checked: sw.getAttribute('aria-checked') === 'true', track, knob }
+      }),
+    )
+
+  const toggle = page.getByRole('switch').first()
+  for (const _ of [0, 1]) {
+    // The knob slides over 150 ms; measuring mid-flight reads the old side.
+    await page.waitForTimeout(300)
+    for (const { checked, track, knob } of await geometry()) {
+      // The knob used to escape the track entirely: absolutely positioned with no
+      // horizontal anchor, it started from the button's centred static position
+      // and the translate pushed it past the right edge — in both states.
+      expect(knob.left).toBeGreaterThanOrEqual(track.left)
+      expect(knob.right).toBeLessThanOrEqual(track.right)
+      // And it must actually move, otherwise the state isn't readable at a glance.
+      const nearerLeft = knob.left - track.left < track.right - knob.right
+      expect(nearerLeft).toBe(!checked)
+    }
+    await toggle.click()
+  }
+})
