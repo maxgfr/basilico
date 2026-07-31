@@ -1,0 +1,53 @@
+name: Bug
+description: Quelque chose ne marche pas comme prévu.
+labels: ['bug']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Avant tout : **une notification ne peut pas partir si l'onglet est fermé.**
+        C'est une limite du web sans serveur, pas un bug — c'est expliqué dans le README.
+
+  - type: textarea
+    id: what
+    attributes:
+      label: Ce qui se passe
+      description: Et ce à quoi tu t'attendais à la place.
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Comment le reproduire
+      placeholder: |
+        1. Démarrer un focus
+        2. Masquer l'onglet 10 minutes
+        3. Revenir
+    validations:
+      required: true
+
+  - type: input
+    id: browser
+    attributes:
+      label: Navigateur et système
+      placeholder: Firefox 141 sur macOS 15
+    validations:
+      required: true
+
+  - type: dropdown
+    id: install
+    attributes:
+      label: Comment tu l'utilises
+      options:
+        - Onglet de navigateur
+        - Application installée (PWA)
+    validations:
+      required: true
+
+  - type: textarea
+    id: console
+    attributes:
+      label: Erreurs dans la console
+      description: Facultatif, mais ça aide beaucoup.
+      render: text

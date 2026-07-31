@@ -1,0 +1,27 @@
+name: Idée ou amélioration
+description: Proposer une fonctionnalité ou un changement.
+labels: ['enhancement']
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Le problème
+      description: Qu'est-ce qui te bloque aujourd'hui ? Décris la situation, pas la solution.
+    validations:
+      required: true
+
+  - type: textarea
+    id: idea
+    attributes:
+      label: Ce que tu proposes
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: constraints
+    attributes:
+      label: Compatible avec le projet
+      description: basilico est local-first et sans serveur. Ces contraintes ne changeront pas.
+      options:
+        - label: Ma proposition ne demande ni compte, ni serveur, ni service tiers.
+          required: true

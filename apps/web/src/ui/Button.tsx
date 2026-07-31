@@ -9,10 +9,11 @@ const BASE =
   'disabled:cursor-not-allowed disabled:opacity-40 motion-reduce:transition-none'
 
 const VARIANTS: Record<Variant, string> = {
-  primary: 'bg-ink-100 text-ink-950 hover:bg-white active:bg-ink-300',
+  // Un `hover:bg-white` s'inverserait en thème clair : l'opacité, elle, marche des deux côtés.
+  primary: 'bg-ink-100 text-ink-950 hover:opacity-90 active:opacity-80',
   secondary: 'bg-ink-800 text-ink-100 hover:bg-ink-600/60 active:bg-ink-800',
   ghost: 'text-ink-300 hover:bg-ink-900 hover:text-ink-100 active:bg-ink-800',
-  danger: 'text-red-300 hover:bg-red-950/60 hover:text-red-200 active:bg-red-950',
+  danger: 'text-danger hover:bg-danger-soft/60 active:bg-danger-soft',
 }
 
 const SIZES: Record<Size, string> = {

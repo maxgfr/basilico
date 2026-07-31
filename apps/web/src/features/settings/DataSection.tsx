@@ -108,7 +108,7 @@ export function DataSection() {
       </Row>
 
       {message && (
-        <output className={`text-sm ${message.tone === 'error' ? 'text-red-300' : 'text-focus'}`}>
+        <output className={`text-sm ${message.tone === 'error' ? 'text-danger' : 'text-focus'}`}>
           {message.text}
         </output>
       )}

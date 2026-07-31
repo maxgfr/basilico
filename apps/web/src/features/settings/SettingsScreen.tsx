@@ -140,6 +140,17 @@ export function SettingsScreen() {
           ]}
         />
         <Choice
+          label="Thème"
+          hint="« Système » suit la préférence de ton appareil, en direct."
+          value={settings.theme}
+          onChange={(theme) => update({ theme })}
+          options={[
+            { value: 'system', label: 'Système' },
+            { value: 'light', label: 'Clair' },
+            { value: 'dark', label: 'Sombre' },
+          ]}
+        />
+        <Choice
           label="Format d’heure"
           value={String(settings.hourFormat) as '12' | '24'}
           onChange={(value) => update({ hourFormat: value === '12' ? 12 : 24 })}

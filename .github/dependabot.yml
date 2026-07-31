@@ -1,0 +1,22 @@
+version: 2
+updates:
+  # Sans `groups`, c'est une douzaine de PR par semaine qu'on finit par ne plus lire.
+  - package-ecosystem: npm
+    directory: '/'
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      dev-deps:
+        dependency-type: development
+      prod-deps:
+        dependency-type: production
+
+  # C'est ce qui empêche les versions d'actions de pourrir en silence.
+  - package-ecosystem: github-actions
+    directory: '/'
+    schedule:
+      interval: weekly
+    groups:
+      actions:
+        patterns: ['*']

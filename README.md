@@ -1,56 +1,90 @@
 # basilico
 
-**[→ Ouvrir l'application](https://maxgfr.github.io/basilico/)**
+[![CI](https://github.com/maxgfr/basilico/actions/workflows/ci.yml/badge.svg)](https://github.com/maxgfr/basilico/actions/workflows/ci.yml)
+[![Licence MIT](https://img.shields.io/badge/licence-MIT-blue.svg)](LICENSE)
+
+### **[→ Ouvrir l'application](https://maxgfr.github.io/basilico/)**
 
 Un minuteur de focus basé sur la technique Pomodoro®, avec des tâches, des alertes et de vraies
-statistiques. Tout est local : pas de compte, pas de serveur, pas de tracking.
+statistiques. Tout est local : pas de compte, pas de serveur, pas de tracking, pas de publicité.
 
-> 🚧 En construction. Le squelette est déployé, le noyau de domaine est écrit et testé.
+![L'écran principal de basilico : anneau de progression, tâches et compteur d'interruptions](docs/images/timer.png)
 
 ## Pourquoi encore un minuteur
 
 Le minuteur est un problème résolu. Ce qui manque partout, c'est ce qui vient après : l'historique,
 les rapports, et la possibilité de récupérer ses données. basilico met l'accent là-dessus.
 
-- **Statistiques** — heatmap annuelle, série de jours, répartition par tâche et par tag, heures les
-  plus productives, et la précision de tes estimations (l'objectif III de Cirillo, que presque
-  personne ne restitue).
-- **Compteur d'interruptions** — internes et externes, comme dans la méthode originale. Un focus
-  définitivement interrompu est annulé, pas comptabilisé à moitié.
-- **Modes overtime et Flowtime** — pour ceux que l'arrêt net à 25 minutes sort de leur flow.
-- **Export/import** — JSON, CSV et [Open Pomodoro Format](https://github.com/open-pomodoro), en
-  libre-service. Tes données t'appartiennent.
+|                          |                                                                                                                                                                                                        |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Statistiques**         | Heatmap sur un an, série de jours, répartition par tâche et par tag, heures les plus productives, et la précision de tes estimations — l'objectif III de Cirillo, que presque aucun outil ne restitue. |
+| **Interruptions**        | Comptées comme dans la méthode originale : internes (`'`) et externes (`-`). Un focus définitivement interrompu est annulé, pas comptabilisé à moitié.                                                 |
+| **Overtime et Flowtime** | Le compteur peut continuer au-delà de zéro, ou tourner en chronomètre libre avec une pause proportionnelle. Pour ceux que l'arrêt net à 25 minutes sort de leur flow.                                  |
+| **Affichage réglable**   | Exact, approché (« environ 24 minutes »), pourcentage, ou caché. Regarder les secondes s'égrener angoisse beaucoup de gens.                                                                            |
+| **Export et import**     | JSON, CSV et [Open Pomodoro Format](https://github.com/open-pomodoro), en libre-service. Tes données t'appartiennent.                                                                                  |
+| **Hors ligne**           | Installable en PWA, fonctionne sans réseau.                                                                                                                                                            |
 
-## Limites, dites franchement
+![Les statistiques : quatorze jours, heatmap annuelle, heures productives, interruptions et précision d'estimation](docs/images/stats.png)
 
-- **Sans onglet ouvert, pas de notification.** Le Web Push exige un serveur, qu'on n'a pas par choix.
-  L'app rattrape le temps écoulé à ton retour, et une extension Chrome est prévue pour couvrir le cas.
-- **Les données vivent dans ton navigateur.** Vider ses données les efface. Safari supprime en plus
-  tout le stockage des sites non visités depuis 7 jours. Fais des exports.
+<sub>Les captures utilisent des données de démonstration générées, pas de vraies sessions.</sub>
+
+## Ce qu'il faut savoir avant de s'en servir
+
+Ce sont les reproches classiques faits aux minuteurs web. Autant les dire franchement.
+
+- **Sans onglet ouvert, pas de notification.** Le Web Push exige un serveur et des clés VAPID, qu'on
+  n'a pas par choix ; l'API qui aurait résolu ça sans serveur (Notification Triggers) a été
+  abandonnée par Chrome. En revanche l'app **rattrape** le temps écoulé à ton retour : la session est
+  enregistrée à sa vraie heure de fin, avec un « terminé il y a X minutes ».
+- **Les données vivent dans ton navigateur.** Vider les données du site les efface. Safari supprime
+  en plus tout le stockage des sites non visités depuis 7 jours. L'app demande le stockage persistant
+  et propose l'export en un clic — fais-en.
 - **Pas de synchronisation.** Un navigateur, un historique. L'export/import sert à changer de machine.
+
+## Raccourcis clavier
+
+| Touche    | Action                                     |
+| --------- | ------------------------------------------ |
+| `Espace`  | Démarrer ou mettre en pause                |
+| `R`       | Réinitialiser la phase                     |
+| `S`       | Passer à la phase suivante                 |
+| `I` / `E` | Compter une interruption interne / externe |
+| `T`       | Aller aux statistiques                     |
 
 ## Développement
 
 ```bash
 pnpm install
-pnpm dev        # http://localhost:5173
-pnpm test       # noyau + composants
+pnpm dev          # http://localhost:5173
+pnpm test         # noyau + composants
 pnpm typecheck
 pnpm lint
 pnpm build
 ```
 
-Le projet est un monorepo pnpm :
+Monorepo pnpm :
 
-- `packages/core` — le domaine (minuteur, cycles, sessions, tâches, statistiques). TypeScript pur,
-  aucune dépendance au DOM, entièrement testé avec une horloge injectée.
-- `apps/web` — l'interface React, et les adaptateurs navigateur (notifications, audio, stockage).
+- **`packages/core`** — le domaine : minuteur, cycles, sessions, tâches, statistiques, sauvegardes.
+  TypeScript pur, aucune dépendance au DOM, testé avec une horloge injectée plutôt qu'avec de vraies
+  attentes.
+- **`apps/web`** — l'interface React et les adaptateurs navigateur (notifications, audio, stockage,
+  wake lock).
 
-Les décisions de conception et leurs raisons sont dans [`docs/design.md`](docs/design.md).
+Le minuteur est piloté par une **échéance absolue** et jamais par un compteur décrémenté : le temps
+restant se recalcule à partir de l'horloge, ce qui le rend insensible au throttling des onglets en
+arrière-plan, à la mise en veille de la machine et au rechargement de la page. Les décisions de
+conception et leurs raisons sont dans [`docs/design.md`](docs/design.md).
+
+Les graphes sont du SVG écrit à la main : zéro dépendance, et chaque figure est doublée d'un tableau
+lisible au lecteur d'écran — ce qu'aucune bibliothèque de charts en canvas ne sait faire.
 
 ## Navigateurs
 
-Chrome 111+, Firefox 128+, Safari 16.4+ (contraintes de Tailwind v4).
+Chrome 111+, Firefox 128+, Safari 16.4+.
+
+## Contribuer
+
+Les issues et les pull requests sont bienvenues — voir [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Licence
 

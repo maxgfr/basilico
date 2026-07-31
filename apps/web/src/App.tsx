@@ -8,6 +8,7 @@ import { useTimerRuntime } from './features/timer/runtime'
 import { useKeyboardShortcuts } from './features/timer/shortcuts'
 import { useDocumentTitle } from './platform/title'
 import { useAlerts } from './platform/alerts'
+import { useTheme } from './platform/theme'
 
 /** Ambiance de fond teintée par le mode, très basse intensité : elle situe, elle ne décore pas. */
 const AMBIENT: Record<string, string> = {
@@ -20,6 +21,7 @@ export function App() {
   const route = useRoute()
   const mode = useApp((s) => s.timer.mode)
 
+  useTheme()
   useTimerRuntime()
   useKeyboardShortcuts()
   useDocumentTitle()
