@@ -3,6 +3,7 @@ import { createJSONStorage, persist } from 'zustand/middleware'
 import {
   addInterruption,
   advance,
+  annotateSession,
   appendSession,
   applySettings,
   createBackup,
@@ -13,7 +14,9 @@ import {
   finish,
   pause,
   parseSettings,
+  parseTaskInput,
   removeTask as removeTaskCore,
+  renameTask as renameTaskCore,
   reorderTasks,
   resume,
   reset as resetCore,
@@ -22,7 +25,7 @@ import {
   updateTask as updateTaskCore,
   type Backup,
   type InterruptionKind,
-  type NewTask,
+  type SessionAnnotation,
   type SessionRecord,
   type Settings,
   type Task,
@@ -54,6 +57,7 @@ type AppState = {
   tick: (now: number) => void
   toggle: (now: number) => void
   startNow: (now: number) => void
+  setIntention: (intention: string | null) => void
   resetPhase: (now: number) => void
   skipPhase: (now: number) => void
   voidPhase: (now: number) => void
@@ -62,7 +66,9 @@ type AppState = {
   drainEvents: () => TimerEvent[]
 
   updateSettings: (patch: Partial<Settings>) => void
-  addTask: (input: NewTask, now: number) => void
+  addTask: (raw: string, estimatedPomodoros: number, now: number) => void
+  renameTask: (id: string, raw: string) => void
+  annotateLast: (patch: SessionAnnotation) => void
   editTask: (id: string, patch: Partial<Task>) => void
   setStatus: (id: string, status: TaskStatus, now: number) => void
   dropTask: (id: string) => void
@@ -154,6 +160,7 @@ export const useApp = create<AppState>()(
         voidPhase: (now) => commit(finish(get().timer, ctx(now), 'voided')),
 
         interrupt: (kind) => set({ timer: addInterruption(get().timer, kind) }),
+        setIntention: (intention) => set({ timer: { ...get().timer, intention } }),
         dismissEnded: () => set({ lastEnded: null }),
         drainEvents: () => {
           const { pending } = get()
@@ -168,12 +175,29 @@ export const useApp = create<AppState>()(
           set({ settings, timer: applySettings(get().timer, settings) })
         },
 
-        addTask: (input, now) => {
+        addTask: (raw, estimatedPomodoros, now) => {
           const { tasks, activeTaskId } = get()
-          const task = createTask(tasks, input, now, uid())
+          const { title, tag } = parseTaskInput(raw)
+          if (title === '') return
+          const task = createTask(tasks, { title, tag, estimatedPomodoros }, now, uid())
           set({
             tasks: [...tasks, task],
             activeTaskId: activeTaskId ?? task.id,
+          })
+        },
+
+        renameTask: (id, raw) => set({ tasks: renameTaskCore(get().tasks, id, raw) }),
+
+        /**
+         * Annotates the session that just ended. The only write the append-only
+         * log accepts, and it never touches durations or outcome.
+         */
+        annotateLast: (patch) => {
+          const { lastEnded, sessions } = get()
+          if (!lastEnded) return
+          set({
+            sessions: annotateSession(sessions, lastEnded.record.id, patch),
+            lastEnded: { ...lastEnded, record: { ...lastEnded.record, ...patch } },
           })
         },
 

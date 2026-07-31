@@ -118,15 +118,24 @@ screen in both themes.
   seven days — the app requests persistent storage and pushes exports.
 - No sync. Export and import to move between machines.
 
-## Not built yet
+## Recording, beyond the numbers
 
-These exist in the data model or the settings but nothing acts on them. They are listed here so
-nobody mistakes them for working features.
+A session can carry an **intention** written before it starts and a **note plus a 1–5 rating**
+written after it ends. Both are optional and the prompt is dismissible: a form you cannot skip
+becomes a toll on every session, and the tool would stop being worth opening.
 
-- **Session intention, note and rating.** The fields exist and survive export/import, but no UI
-  writes them.
-- **Task tags.** A session inherits its task's tag and the stats aggregate by tag, but no UI lets
-  you set a tag on a task — so the "By tag" chart only fills up from an import.
-- **Renaming a task.** `editTask` exists in the store; no UI calls it.
-- **Staged alerts.** The "warn me before the end" toggle is stored, but nothing schedules the
-  warning.
+That annotation is the one write the append-only log accepts. It never touches durations or outcome,
+so every statistic stays reproducible from the log alone.
+
+**Tags** are typed inline — `Write the core #basilico` — rather than through a separate field. The
+task form lives in a 20 rem column where a fourth input pushed everything onto a second line, and
+the `#` convention is one people already know. A session freezes its task's tag at start time:
+reading it back from the task later would silently rewrite months of history the first time someone
+retags something.
+
+## Not built
+
+- **Sync between devices.** Deliberate: it would need a server, which is the one thing this project
+  refuses. Export and import cover moving machines.
+- **A Chrome Web Store listing.** The extension is loaded unpacked from a release zip; publishing
+  needs a paid developer account and a review round.

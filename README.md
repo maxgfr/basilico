@@ -22,6 +22,8 @@ the reports, and being able to get your data back out. That's where basilico put
 | **Overtime and Flowtime** | The counter can run past zero, or run as a free stopwatch with a break sized from what you worked. For people whose flow a hard stop at 25 minutes breaks.                                             |
 | **Adjustable display**    | Exact, rough ("about 24 minutes"), percentage, or hidden. Watching seconds tick down makes a lot of people anxious.                                                                                    |
 | **Endless by default**    | Breaks and focus sessions start themselves, so the cycle runs on its own until you stop it.                                                                                                            |
+| **A session journal**     | Jot an intention before a session, a note and a 1–5 rating after. Optional, dismissible, and it feeds a journal on the stats page.                                                                     |
+| **Inline tags**           | Type `Write the core #basilico`. Tags drive the per-tag breakdown; no extra field to fill in.                                                                                                          |
 | **Export and import**     | JSON, CSV and [Open Pomodoro Format](https://github.com/open-pomodoro), free and in the open. Your data is yours.                                                                                      |
 | **Offline**               | Installable as a PWA, works with no network.                                                                                                                                                           |
 

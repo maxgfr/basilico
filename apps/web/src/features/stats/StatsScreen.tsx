@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import {
+  annotatedSessions,
   byHour,
   byTag,
   currentStreak,
@@ -33,6 +34,7 @@ export function StatsScreen() {
       tags: byTag(sessions),
       streak: currentStreak(sessions, now),
       estimation: estimationAccuracy(tasks),
+      annotated: annotatedSessions(sessions),
     }
   }, [sessions, tasks])
 
@@ -67,6 +69,13 @@ export function StatsScreen() {
           value={formatDuration(stats.all.focusMs)}
           hint={`${stats.all.completedFocus} pomodoros`}
         />
+        {stats.all.averageRating !== null && (
+          <Stat
+            label="Average rating"
+            value={`${stats.all.averageRating.toFixed(1)} / 5`}
+            hint="across the sessions you rated"
+          />
+        )}
       </div>
 
       <Figure
@@ -145,6 +154,34 @@ export function StatsScreen() {
                 >
                   {row.actual} / {row.estimated} · {formatRatio(row.ratio)}
                 </span>
+              </li>
+            ))}
+          </ul>
+        </Figure>
+      )}
+
+      {stats.annotated.length > 0 && (
+        <Figure
+          title="Session journal"
+          summary="The most recent sessions you wrote something about."
+          columns={['Session', 'What you wrote']}
+          rows={stats.annotated.map((s): [string, string] => [
+            new Date(s.startedAt).toLocaleString(),
+            [s.intention, s.note].filter(Boolean).join(' — '),
+          ])}
+        >
+          <ul aria-hidden="true" className="flex flex-col gap-3 text-sm">
+            {stats.annotated.map((session) => (
+              <li key={session.id} className="border-ink-800 border-b pb-3 last:border-0 last:pb-0">
+                <div className="text-ink-600 flex items-center gap-2 text-xs">
+                  <span className="tabular">{new Date(session.startedAt).toLocaleString()}</span>
+                  {session.tag && <span>#{session.tag}</span>}
+                  {session.rating !== null && (
+                    <span className="text-focus tabular">{session.rating}/5</span>
+                  )}
+                </div>
+                {session.intention && <p className="text-ink-300 mt-1">{session.intention}</p>}
+                {session.note && <p className="text-ink-600 mt-0.5 text-xs">{session.note}</p>}
               </li>
             ))}
           </ul>

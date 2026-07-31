@@ -73,6 +73,77 @@ describe('main screen', () => {
   })
 })
 
+describe('tasks', () => {
+  it('pulls a #tag out of what you type and offers it back as a chip', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+
+    await user.type(screen.getByLabelText('Task title'), 'Write the core #basilico')
+    await user.click(screen.getByRole('button', { name: 'Add' }))
+
+    const task = useApp.getState().tasks[0]
+    expect(task?.title).toBe('Write the core')
+    expect(task?.tag).toBe('basilico')
+    expect(screen.getByRole('button', { name: '#basilico' })).toBeInTheDocument()
+  })
+
+  it('renames in place and re-reads the tag', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+    await user.type(screen.getByLabelText('Task title'), 'Old name')
+    await user.click(screen.getByRole('button', { name: 'Add' }))
+
+    await user.click(screen.getByRole('button', { name: 'Rename Old name' }))
+    const field = screen.getByLabelText('Rename Old name')
+    await user.clear(field)
+    await user.type(field, 'New name #work{Enter}')
+
+    const task = useApp.getState().tasks[0]
+    expect(task?.title).toBe('New name')
+    expect(task?.tag).toBe('work')
+  })
+
+  it('carries the active task tag onto the session', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+    await user.type(screen.getByLabelText('Task title'), 'Tagged #work')
+    await user.click(screen.getByRole('button', { name: 'Add' }))
+    await user.click(screen.getByRole('button', { name: 'Start' }))
+
+    // Without this the per-tag stats could never fill up from real usage.
+    expect(useApp.getState().timer.tag).toBe('work')
+  })
+})
+
+describe('session notes', () => {
+  it('records an intention before starting', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+
+    await user.type(screen.getByLabelText('Session intention'), 'Ship the parser')
+    await user.click(screen.getByRole('button', { name: 'Start' }))
+
+    expect(useApp.getState().timer.intention).toBe('Ship the parser')
+  })
+
+  it('annotates the session that just ended, without touching its durations', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+
+    await user.click(screen.getByRole('button', { name: 'Start' }))
+    await user.click(screen.getByRole('button', { name: 'Void this focus' }))
+
+    await user.click(screen.getByRole('radio', { name: '4 out of 5' }))
+    await user.type(screen.getByLabelText('Session note'), 'Kept getting pinged')
+    await user.click(screen.getByRole('button', { name: 'Save' }))
+
+    const logged = useApp.getState().sessions.at(-1)
+    expect(logged?.rating).toBe(4)
+    expect(logged?.note).toBe('Kept getting pinged')
+    expect(logged?.outcome).toBe('voided')
+  })
+})
+
 describe('stats', () => {
   it('explains what to do while there is no session yet', () => {
     window.location.hash = '#/stats'

@@ -1,5 +1,5 @@
-import { useState, type FormEvent } from 'react'
-import { visibleTasks, type Task } from '@basilico/core'
+import { useRef, useState, type FormEvent } from 'react'
+import { knownTags, visibleTasks, type Task } from '@basilico/core'
 import { useApp } from '../../store/app'
 import { Button } from '../../ui/Button'
 import { Pomodoros } from './Pomodoros'
@@ -28,7 +28,10 @@ export function TaskList() {
         )}
       </div>
 
-      <AddTaskForm onAdd={(input) => addTask(input, Date.now())} />
+      <AddTaskForm
+        tags={knownTags(tasks)}
+        onAdd={(raw, estimate) => addTask(raw, estimate, Date.now())}
+      />
 
       {open.length === 0 && done.length === 0 ? (
         <EmptyTasks />
@@ -94,7 +97,47 @@ function TaskRow({ task, index, count, active, onActivate }: RowProps) {
   const setStatus = useApp((s) => s.setStatus)
   const dropTask = useApp((s) => s.dropTask)
   const moveTask = useApp((s) => s.moveTask)
+  const rename = useApp((s) => s.renameTask)
+  const [editing, setEditing] = useState(false)
   const isDone = task.status === 'done'
+
+  // Focus moved by hand rather than with `autoFocus`: the attribute is a usability
+  // problem when a page loads with it, but here the field only appears because
+  // the user asked to rename, and leaving focus behind would strand the keyboard.
+  const focusInput = (node: HTMLInputElement | null) => {
+    node?.focus()
+    node?.select()
+  }
+
+  if (editing) {
+    return (
+      <li className="bg-ink-900 rounded-lg px-3 py-2">
+        <form
+          onSubmit={(event) => {
+            event.preventDefault()
+            const value = new FormData(event.currentTarget).get('title')
+            if (typeof value === 'string') rename(task.id, value)
+            setEditing(false)
+          }}
+        >
+          <input
+            name="title"
+            defaultValue={task.tag ? `${task.title} #${task.tag}` : task.title}
+            aria-label={`Rename ${task.title}`}
+            // Escape must abandon the edit: committing on blur alone would make
+            // a mistyped rename impossible to back out of.
+            onKeyDown={(event) => event.key === 'Escape' && setEditing(false)}
+            onBlur={(event) => {
+              rename(task.id, event.target.value)
+              setEditing(false)
+            }}
+            ref={focusInput}
+            className="border-ink-800 bg-ink-950 focus:border-ink-600 h-8 w-full rounded border px-2 text-sm outline-none"
+          />
+        </form>
+      </li>
+    )
+  }
 
   return (
     <li
@@ -151,6 +194,14 @@ function TaskRow({ task, index, count, active, onActivate }: RowProps) {
         <Button
           variant="ghost"
           size="sm"
+          aria-label={`Rename ${task.title}`}
+          onClick={() => setEditing(true)}
+        >
+          Rename
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
           aria-label={`Archive ${task.title}`}
           onClick={() => setStatus(task.id, 'archived', Date.now())}
         >
@@ -170,52 +221,80 @@ function TaskRow({ task, index, count, active, onActivate }: RowProps) {
 }
 
 function AddTaskForm({
+  tags,
   onAdd,
 }: {
-  onAdd: (input: { title: string; estimatedPomodoros: number }) => void
+  tags: string[]
+  onAdd: (raw: string, estimatedPomodoros: number) => void
 }) {
-  const [title, setTitle] = useState('')
+  const [raw, setRaw] = useState('')
   const [estimate, setEstimate] = useState(1)
+  const listId = useRef(`tags-${Math.random().toString(36).slice(2)}`).current
 
   const submit = (event: FormEvent) => {
     event.preventDefault()
-    const trimmed = title.trim()
-    if (trimmed === '') return
-    onAdd({ title: trimmed, estimatedPomodoros: estimate })
-    setTitle('')
+    if (raw.trim() === '') return
+    onAdd(raw, estimate)
+    setRaw('')
     setEstimate(1)
   }
 
   return (
-    <form onSubmit={submit} className="flex items-center gap-2">
-      <input
-        value={title}
-        onChange={(e) => setTitle(e.target.value)}
-        placeholder="What are you working on?"
-        aria-label="Task title"
-        className="border-ink-800 bg-ink-900 placeholder:text-ink-600 focus:border-ink-600 h-10 min-w-0 flex-1 rounded-lg border px-3 text-sm outline-none"
-      />
-      <input
-        type="number"
-        min={1}
-        max={20}
-        value={estimate}
-        onChange={(e) => setEstimate(Math.max(1, Number(e.target.value) || 1))}
-        aria-label="Estimated pomodoros"
-        title="Estimated pomodoros"
-        className="border-ink-800 bg-ink-900 tabular focus:border-ink-600 h-10 w-12 shrink-0 rounded-lg border px-1 text-center text-sm outline-none"
-      />
-      {/* Compact button: in a 20 rem column, spelling out "Add" pushed the form
-          onto a second line. */}
-      <Button
-        type="submit"
-        variant="secondary"
-        aria-label="Add"
-        disabled={title.trim() === ''}
-        className="shrink-0 px-3 text-lg"
-      >
-        +
-      </Button>
+    <form onSubmit={submit} className="flex flex-col gap-1.5">
+      <div className="flex items-center gap-2">
+        <input
+          value={raw}
+          onChange={(e) => setRaw(e.target.value)}
+          placeholder="What are you working on?"
+          aria-label="Task title"
+          aria-describedby={`${listId}-hint`}
+          className="border-ink-800 bg-ink-900 placeholder:text-ink-600 focus:border-ink-600 h-10 min-w-0 flex-1 rounded-lg border px-3 text-sm outline-none"
+        />
+        <input
+          type="number"
+          min={1}
+          max={20}
+          value={estimate}
+          onChange={(e) => setEstimate(Math.max(1, Number(e.target.value) || 1))}
+          aria-label="Estimated pomodoros"
+          title="Estimated pomodoros"
+          className="border-ink-800 bg-ink-900 tabular focus:border-ink-600 h-10 w-12 shrink-0 rounded-lg border px-1 text-center text-sm outline-none"
+        />
+        {/* Compact button: in a 20 rem column, spelling out "Add" pushed the form
+            onto a second line. */}
+        <Button
+          type="submit"
+          variant="secondary"
+          aria-label="Add"
+          disabled={raw.trim() === ''}
+          className="shrink-0 px-3 text-lg"
+        >
+          +
+        </Button>
+      </div>
+      <p id={`${listId}-hint`} className="text-ink-600 text-xs">
+        Add <span className="text-ink-300">#a-tag</span> to group it — tags drive the per-tag stats.
+      </p>
+
+      {tags.length > 0 && (
+        <div className="flex flex-wrap gap-1">
+          {tags.slice(0, 6).map((tag) => (
+            <button
+              key={tag}
+              type="button"
+              // Clickable chips rather than a datalist: they are visible without
+              // opening anything, and a datalist option carries no label a
+              // screen reader can announce.
+              onClick={() =>
+                setRaw((current) => `${current.replace(/\s*#\S*$/, '')} #${tag}`.trim())
+              }
+              className="border-ink-800 text-ink-600 hover:border-ink-600 hover:text-ink-300 rounded-full border px-2 py-0.5 text-xs transition-colors duration-150 motion-reduce:transition-none"
+            >
+              #{tag}
+            </button>
+          ))}
+        </div>
+      )}
     </form>
   )
 }

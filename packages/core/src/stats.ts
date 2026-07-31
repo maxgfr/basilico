@@ -38,6 +38,8 @@ export type Summary = {
   interruptions: { internal: number; external: number }
   /** Completed focus ÷ started focus, between 0 and 1. `null` when there are none. */
   completionRate: number | null
+  /** Mean of the ratings actually given, `null` while none has been. */
+  averageRating: number | null
 }
 
 export function summarize(sessions: readonly SessionRecord[]): Summary {
@@ -50,13 +52,20 @@ export function summarize(sessions: readonly SessionRecord[]): Summary {
     skipped: 0,
     interruptions: { internal: 0, external: 0 },
     completionRate: null,
+    averageRating: null,
   }
 
   let focusStarted = 0
+  let ratings = 0
+  let ratingTotal = 0
   for (const s of sessions) {
     summary.interruptions.internal += s.interruptions.internal
     summary.interruptions.external += s.interruptions.external
     if (s.outcome === 'skipped') summary.skipped++
+    if (s.rating !== null) {
+      ratings++
+      ratingTotal += s.rating
+    }
 
     if (s.mode === 'focus') {
       focusStarted++
@@ -72,7 +81,21 @@ export function summarize(sessions: readonly SessionRecord[]): Summary {
   }
 
   if (focusStarted > 0) summary.completionRate = summary.completedFocus / focusStarted
+  if (ratings > 0) summary.averageRating = ratingTotal / ratings
   return summary
+}
+
+/**
+ * The most recent focus sessions carrying something written by hand.
+ *
+ * An intention or a note nobody can read back is a field, not a feature — this
+ * is what turns the log into something worth revisiting.
+ */
+export function annotatedSessions(sessions: readonly SessionRecord[], limit = 10): SessionRecord[] {
+  return sessions
+    .filter((s) => s.mode === 'focus' && (s.intention !== null || s.note !== null))
+    .slice(-limit)
+    .reverse()
 }
 
 export type DayBucket = { date: string; ts: number; focusMs: number; completedFocus: number }

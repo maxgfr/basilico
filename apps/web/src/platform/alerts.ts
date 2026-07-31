@@ -6,6 +6,18 @@ import { createWakeLock } from './wakelock'
 import { useApp } from '../store/app'
 import { MODE_LABEL } from '../lib/format'
 
+/**
+ * How much warning each phase gets. A focus deserves a minute to wrap a thought
+ * up; a break only needs a nudge, since interrupting one costs nothing.
+ */
+const WARNING_LEAD_MS = { focus: 60_000, shortBreak: 30_000, longBreak: 30_000 } as const
+
+const WARNING_LABEL = {
+  focus: 'Focus ends in a minute — start wrapping up.',
+  shortBreak: 'Break ends in 30 seconds.',
+  longBreak: 'Break ends in 30 seconds.',
+} as const
+
 const NEXT_LABEL = {
   focus: 'Back to work.',
   shortBreak: 'Five minutes to breathe.',
@@ -45,6 +57,30 @@ export function useAlerts(): void {
     settings.sound.enabled,
     settings.sound.alarm,
     settings.sound.volume,
+  ])
+
+  // Staged warning, armed on its own absolute instant. Best-effort by design: it
+  // is a courtesy, and unlike the end-of-phase alert nothing depends on it — so
+  // a throttled tab that swallows it costs nothing.
+  useEffect(() => {
+    if (!settings.notifications.enabled || !settings.notifications.staged) return
+    if (timer.status !== 'running' || timer.endsAt === null) return
+
+    const lead = WARNING_LEAD_MS[timer.mode]
+    const delay = timer.endsAt - lead - Date.now()
+    // Already inside the warning window: warning after the fact would be absurd.
+    if (delay <= 0) return
+
+    const id = setTimeout(() => {
+      void notify(MODE_LABEL[timer.mode], WARNING_LABEL[timer.mode])
+    }, delay)
+    return () => clearTimeout(id)
+  }, [
+    timer.status,
+    timer.endsAt,
+    timer.mode,
+    settings.notifications.enabled,
+    settings.notifications.staged,
   ])
 
   // Ticking, only during an active focus session.

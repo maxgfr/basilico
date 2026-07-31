@@ -1,5 +1,24 @@
 import type { Task, TaskStatus } from './types'
 
+/**
+ * Pulls `#tags` out of a typed title.
+ *
+ * Typing "Write the core #basilico" beats a second input box: the task form
+ * lives in a 20 rem column where a dedicated tag field pushed everything onto a
+ * second line, and this is the convention people already use everywhere else.
+ * Only the first tag is kept — a session belongs to one bucket, not several.
+ */
+export function parseTaskInput(raw: string): { title: string; tag: string | null } {
+  const tags = [...raw.matchAll(/(?:^|\s)#([\p{L}\p{N}_-]+)/gu)].map((m) => m[1] ?? '')
+  const title = raw
+    .replace(/(?:^|\s)#[\p{L}\p{N}_-]+/gu, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+  const tag = tags[0] ?? null
+  // A title made only of tags would leave an empty row: keep the raw text then.
+  return { title: title === '' ? raw.trim() : title, tag: title === '' ? null : tag }
+}
+
 export type NewTask = {
   title: string
   estimatedPomodoros?: number
@@ -25,6 +44,22 @@ export function createTask(tasks: readonly Task[], input: NewTask, now: number, 
 
 export function updateTask(tasks: readonly Task[], id: string, patch: Partial<Task>): Task[] {
   return tasks.map((t) => (t.id === id ? { ...t, ...patch, id: t.id } : t))
+}
+
+/** Renames a task, re-reading any `#tag` typed into the new title. */
+export function renameTask(tasks: readonly Task[], id: string, raw: string): Task[] {
+  const { title, tag } = parseTaskInput(raw)
+  if (title === '') return [...tasks]
+  return tasks.map((t) => (t.id === id ? { ...t, title, tag: tag ?? t.tag } : t))
+}
+
+/** Every tag in use, most recent first — feeds the input's suggestions. */
+export function knownTags(tasks: readonly Task[]): string[] {
+  const seen = new Set<string>()
+  for (const task of [...tasks].reverse()) {
+    if (task.tag) seen.add(task.tag)
+  }
+  return [...seen]
 }
 
 export function setTaskStatus(

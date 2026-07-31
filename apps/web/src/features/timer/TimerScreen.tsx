@@ -14,6 +14,7 @@ import { useNow } from './runtime'
 import { ActiveTaskBar } from '../tasks/ActiveTaskBar'
 import { PipTimer } from './PipTimer'
 import { usePictureInPicture } from '../../platform/pip'
+import { IntentionField, SessionLog } from './SessionNotes'
 
 export function TimerScreen() {
   const timer = useApp((s) => s.timer)
@@ -138,6 +139,8 @@ export function TimerScreen() {
         </div>
       )}
 
+      <IntentionField />
+      <SessionLog />
       <ActiveTaskBar />
     </div>
   )
