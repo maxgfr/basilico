@@ -96,6 +96,7 @@ export function DataSection() {
             ref={fileInput}
             type="file"
             accept="application/json,.json"
+            aria-label="Fichier de sauvegarde à importer"
             className="sr-only"
             onChange={(e) => {
               const file = e.target.files?.[0]

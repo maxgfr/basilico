@@ -22,6 +22,7 @@ les rapports, et la possibilité de récupérer ses données. basilico met l'acc
 | **Overtime et Flowtime** | Le compteur peut continuer au-delà de zéro, ou tourner en chronomètre libre avec une pause proportionnelle. Pour ceux que l'arrêt net à 25 minutes sort de leur flow.                                  |
 | **Affichage réglable**   | Exact, approché (« environ 24 minutes »), pourcentage, ou caché. Regarder les secondes s'égrener angoisse beaucoup de gens.                                                                            |
 | **Export et import**     | JSON, CSV et [Open Pomodoro Format](https://github.com/open-pomodoro), en libre-service. Tes données t'appartiennent.                                                                                  |
+| **Fenêtre flottante**    | Le minuteur détaché en petite fenêtre toujours au-dessus, via l'API Document Picture-in-Picture (Chromium).                                                                                            |
 | **Hors ligne**           | Installable en PWA, fonctionne sans réseau.                                                                                                                                                            |
 
 ![Les statistiques : quatorze jours, heatmap annuelle, heures productives, interruptions et précision d'estimation](docs/images/stats.png)

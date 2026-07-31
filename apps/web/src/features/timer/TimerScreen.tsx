@@ -12,6 +12,8 @@ import { CyclePips } from './CyclePips'
 import { TimerRing } from './TimerRing'
 import { useNow } from './runtime'
 import { ActiveTaskBar } from '../tasks/ActiveTaskBar'
+import { PipTimer } from './PipTimer'
+import { usePictureInPicture } from '../../platform/pip'
 
 export function TimerScreen() {
   const timer = useApp((s) => s.timer)
@@ -26,6 +28,7 @@ export function TimerScreen() {
 
   const live = timer.status === 'running' || timer.status === 'overtime'
   const now = useNow(live)
+  const pip = usePictureInPicture()
 
   const remaining = remainingMs(timer, now)
   const elapsed = elapsedMs(timer, now)
@@ -103,7 +106,14 @@ export function TimerScreen() {
         >
           Réinitialiser
         </Button>
+        {pip.supported && (
+          <Button variant="ghost" onClick={() => void pip.toggle()}>
+            {pip.window ? 'Fermer la fenêtre flottante' : 'Fenêtre flottante'}
+          </Button>
+        )}
       </div>
+
+      {pip.window && <PipTimer target={pip.window} />}
 
       {isFocus && timer.status !== 'idle' && (
         <div className="flex flex-col items-center gap-2">
