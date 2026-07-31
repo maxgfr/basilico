@@ -34,12 +34,34 @@ Ce sont les reproches classiques faits aux minuteurs web. Autant les dire franch
 
 - **Sans onglet ouvert, pas de notification.** Le Web Push exige un serveur et des clés VAPID, qu'on
   n'a pas par choix ; l'API qui aurait résolu ça sans serveur (Notification Triggers) a été
-  abandonnée par Chrome. En revanche l'app **rattrape** le temps écoulé à ton retour : la session est
-  enregistrée à sa vraie heure de fin, avec un « terminé il y a X minutes ».
+  abandonnée par Chrome. Deux réponses : l'app **rattrape** le temps écoulé à ton retour — la session
+  est enregistrée à sa vraie heure de fin, avec un « terminé il y a X minutes » — et
+  [l'extension Chrome](#extension-chrome) couvre vraiment le cas de l'onglet fermé.
 - **Les données vivent dans ton navigateur.** Vider les données du site les efface. Safari supprime
   en plus tout le stockage des sites non visités depuis 7 jours. L'app demande le stockage persistant
   et propose l'export en un clic — fais-en.
 - **Pas de synchronisation.** Un navigateur, un historique. L'export/import sert à changer de machine.
+
+## Extension Chrome
+
+Sans elle, aucune notification ne peut partir quand l'onglet est fermé. L'extension pose une vraie
+alarme système, qui survit à la fermeture de l'onglet et à la mise en veille du service worker.
+
+Elle est délibérément **un notificateur, pas un second minuteur** : l'application reste la seule
+source de vérité et lui annonce simplement son échéance. Deux minuteurs indépendants finiraient par
+diverger, et il faudrait arbitrer lequel a raison.
+
+```bash
+pnpm --filter @basilico/extension build
+```
+
+Puis, dans Chrome : `chrome://extensions` → activer le mode développeur → **Charger l'extension non
+empaquetée** → choisir `apps/extension/dist`. Recharge l'onglet basilico : les réglages affichent
+« Extension Chrome — Détectée ».
+
+Elle n'est pas publiée au Chrome Web Store pour l'instant (compte développeur payant et délai de
+revue). Le dialogue avec la page passe par un content script limité à l'origine de l'application ;
+l'extension ne lit rien d'autre.
 
 ## Raccourcis clavier
 

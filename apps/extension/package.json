@@ -1,0 +1,23 @@
+{
+  "name": "@basilico/extension",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Extension Chrome MV3 : alerte les fins de session basilico même onglet fermé.",
+  "scripts": {
+    "build": "vite build && vite build --config vite.content.config.ts && node scripts/finalize.mjs",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --passWithNoTests",
+    "e2e": "playwright test"
+  },
+  "dependencies": {
+    "@basilico/core": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.1.28",
+    "typescript": "~6.0.3",
+    "vite": "^8.2.0",
+    "vitest": "^4.1.10",
+    "@playwright/test": "^1.62.1"
+  }
+}

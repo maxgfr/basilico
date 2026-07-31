@@ -1,0 +1,26 @@
+{
+  "manifest_version": 3,
+  "name": "basilico — alertes de focus",
+  "version": "0.1.0",
+  "description": "Fait sonner et notifier tes sessions basilico même quand l'onglet est fermé.",
+  "minimum_chrome_version": "116",
+  "icons": {
+    "128": "icons/icon-128.png"
+  },
+  "permissions": ["alarms", "notifications", "storage", "offscreen"],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "basilico"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://maxgfr.github.io/basilico/*"],
+      "js": ["content.js"],
+      "run_at": "document_start"
+    }
+  ]
+}

@@ -8,11 +8,13 @@ import { permissionState, requestPermission } from '../../platform/notifications
 import type { AlarmName } from '../../platform/sound'
 import { SHORTCUTS } from '../timer/shortcuts'
 import { DataSection } from './DataSection'
+import { useExtensionBridge } from '../../platform/extension'
 
 export function SettingsScreen() {
   const settings = useApp((s) => s.settings)
   const update = useApp((s) => s.updateSettings)
   const [permission, setPermission] = useState(permissionState)
+  const extensionVersion = useExtensionBridge()
   const [persisted, setPersisted] = useState<boolean | null>(null)
 
   useEffect(() => {
@@ -244,6 +246,27 @@ export function SettingsScreen() {
           checked={settings.notifications.staged}
           onChange={(staged) => update({ notifications: { ...settings.notifications, staged } })}
         />
+        <Row
+          label="Extension Chrome"
+          hint={
+            extensionVersion
+              ? `Détectée (v${extensionVersion}) : tes sessions sonnent même onglet fermé.`
+              : 'Non installée. Sans elle, une notification ne peut pas partir si l’onglet est fermé — le web sans serveur ne le permet pas. basilico rattrape alors le temps écoulé à ton retour.'
+          }
+        >
+          {extensionVersion ? (
+            <span className="text-focus text-sm">Active</span>
+          ) : (
+            <a
+              href="https://github.com/maxgfr/basilico#extension-chrome"
+              target="_blank"
+              rel="noreferrer"
+              className="text-ink-300 hover:text-ink-100 text-sm underline underline-offset-4"
+            >
+              Comment l’installer
+            </a>
+          )}
+        </Row>
         <Toggle
           label="Garder l’écran allumé"
           hint="Pendant les focus uniquement. Consomme de la batterie."

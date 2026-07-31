@@ -9,6 +9,7 @@ import { useKeyboardShortcuts } from './features/timer/shortcuts'
 import { useDocumentTitle } from './platform/title'
 import { useAlerts } from './platform/alerts'
 import { useTheme } from './platform/theme'
+import { useExtensionBridge } from './platform/extension'
 
 /** Ambiance de fond teintée par le mode, très basse intensité : elle situe, elle ne décore pas. */
 const AMBIENT: Record<string, string> = {
@@ -26,6 +27,7 @@ export function App() {
   useKeyboardShortcuts()
   useDocumentTitle()
   useAlerts()
+  useExtensionBridge()
 
   return (
     <div className="relative min-h-full">

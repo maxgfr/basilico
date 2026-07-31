@@ -52,6 +52,10 @@ jobs:
         # Les bibliothèques système vivent hors du cache : à réinstaller même sur un hit.
         run: pnpm --filter @basilico/web exec playwright install-deps chromium
       - run: pnpm --filter @basilico/web e2e
+      # L'extension se teste chargée dans un vrai Chromium : le câblage MV3
+      # (service worker module, alarmes, offscreen) n'échoue qu'à l'exécution.
+      - run: pnpm --filter @basilico/extension build
+      - run: pnpm --filter @basilico/extension e2e
       - uses: actions/upload-artifact@v4
         if: ${{ !cancelled() }}
         with:
