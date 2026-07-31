@@ -151,3 +151,44 @@ describe('stats', () => {
     expect(screen.getByRole('heading', { name: /Nothing to show/ })).toBeInTheDocument()
   })
 })
+
+describe('number fields', () => {
+  it('lets you clear the field and type a fresh value', async () => {
+    const user = userEvent.setup()
+    window.location.hash = '#/settings'
+    render(<App />)
+
+    const focus = screen.getByLabelText('Focus')
+    await user.clear(focus)
+    // Clamping on every keystroke used to snap this back to the minimum, which
+    // made the next digits append to the old value and hit the maximum: typing
+    // "50" landed on 240.
+    expect(focus).toHaveValue(null)
+
+    await user.type(focus, '50')
+    expect(useApp.getState().settings.durations.focus).toBe(50)
+  })
+
+  it('clamps out-of-range input on blur rather than mid-typing', async () => {
+    const user = userEvent.setup()
+    window.location.hash = '#/settings'
+    render(<App />)
+
+    const focus = screen.getByLabelText('Focus')
+    await user.clear(focus)
+    await user.type(focus, '999')
+    await user.tab()
+    expect(useApp.getState().settings.durations.focus).toBe(240)
+  })
+
+  it('reverts an unparseable draft instead of guessing', async () => {
+    const user = userEvent.setup()
+    window.location.hash = '#/settings'
+    render(<App />)
+
+    const focus = screen.getByLabelText('Focus')
+    await user.clear(focus)
+    await user.tab()
+    expect(useApp.getState().settings.durations.focus).toBe(25)
+  })
+})

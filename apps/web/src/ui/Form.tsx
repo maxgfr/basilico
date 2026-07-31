@@ -1,4 +1,4 @@
-import { useId, type ReactNode } from 'react'
+import { useId, useState, type ReactNode } from 'react'
 
 export function Section({
   id,
@@ -86,6 +86,16 @@ export function Toggle({
   )
 }
 
+/**
+ * A bounded number input that lets you actually type.
+ *
+ * Clamping on every keystroke fights the typist: emptying the field snapped it
+ * back to the minimum, so the digits you typed next were appended to the old
+ * value and slammed straight into the maximum — typing "50" landed on 240.
+ *
+ * So we keep an uncommitted draft while the text isn't a valid number yet, and
+ * only clamp on blur, where a correction is expected rather than surprising.
+ */
 export function NumberField({
   value,
   onChange,
@@ -104,6 +114,10 @@ export function NumberField({
   suffix?: string
 }) {
   const id = useId()
+  const [draft, setDraft] = useState<string | null>(null)
+
+  const clamp = (n: number) => Math.min(max, Math.max(min, Math.round(n)))
+
   return (
     <Row label={label} hint={hint} htmlFor={id}>
       <div className="flex items-center gap-2">
@@ -113,10 +127,29 @@ export function NumberField({
           inputMode="numeric"
           min={min}
           max={max}
-          value={value}
+          value={draft ?? String(value)}
           onChange={(e) => {
-            const next = Number(e.target.value)
-            if (Number.isFinite(next)) onChange(Math.min(max, Math.max(min, Math.round(next))))
+            const text = e.target.value
+            const parsed = Number(text)
+            // Commit as soon as the text reads as an in-range number, so the
+            // cycle summary keeps updating live; otherwise hold the draft.
+            if (text.trim() !== '' && Number.isFinite(parsed) && parsed >= min && parsed <= max) {
+              setDraft(null)
+              onChange(Math.round(parsed))
+            } else {
+              setDraft(text)
+            }
+          }}
+          onBlur={() => {
+            if (draft === null) return
+            const parsed = Number(draft)
+            // An unparseable draft reverts rather than guessing at an intent.
+            if (draft.trim() !== '' && Number.isFinite(parsed)) onChange(clamp(parsed))
+            setDraft(null)
+          }}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') e.currentTarget.blur()
+            if (e.key === 'Escape') setDraft(null)
           }}
           className="border-ink-800 bg-ink-900 tabular focus:border-ink-600 h-9 w-20 rounded-lg border px-3 text-right text-sm outline-none"
         />
