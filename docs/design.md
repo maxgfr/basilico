@@ -252,10 +252,12 @@ tutoriels en circulation sont périmés.
 
 **Gotchas à ne pas découvrir en route :**
 
-- 🔴 **Ne pas installer TypeScript 7.** Il est `latest` depuis juillet 2026 (réécriture Go, 8–12× plus
-  rapide) mais n'expose pas encore d'API programmatique stable : `typescript-eslint` déclare
-  `<6.1.0` en peer et `npm install` échoue en `ERESOLVE`. Le template officiel React-TS épingle
-  lui-même `~6.0.2`. On prend `~6.0.3` et **oxlint**, dont le moteur type-aware est bâti sur TS 7.
+- 🟢 **TypeScript 7 est utilisable ici, contrairement à ce qu'on croyait au départ.** Le blocage
+  connu vient de `typescript-eslint`, qui déclare `<6.1.0` en peer parce que TS 7 n'expose pas
+  encore d'API programmatique stable. Ce projet n'utilise pas typescript-eslint mais **oxlint**,
+  dont le moteur type-aware est justement bâti sur TS 7 : lint, typecheck, tests et build passent
+  tous en `~7.0.2`, vérifié en CI. Le projet est parti en `~6.0.3` par prudence, puis est passé
+  en 7 une fois la chaîne prouvée. Quiconque réintroduirait typescript-eslint devrait revenir en 6.
 - 🟠 **Vite 8 a renommé la config** : `build.rollupOptions` → `build.rolldownOptions`. Silencieux si
   on se trompe. `@vitejs/plugin-react@6` exige Vite 8 et a **supprimé Babel** (donc plus d'option
   `react({ babel })`). On saute le React Compiler : il réintroduit une passe Babel dans un pipeline

@@ -42,6 +42,13 @@ pnpm --filter @basilico/web e2e
 
 Ouvre une issue d'abord — ça évite d'écrire du code pour rien si la direction ne colle pas.
 
+## TypeScript 7
+
+Le projet tourne sur TypeScript 7. C'est possible parce qu'on lint avec **oxlint** : la seule chose
+qui bloquait vraiment l'écosystème sur TS 7, c'est `typescript-eslint`, qui exige encore une API
+programmatique que TS 7 n'expose pas. Si tu réintroduis typescript-eslint, il faudra repasser
+TypeScript en `~6.0.x`.
+
 ## Style
 
 Prettier et oxlint s'en chargent (`pnpm format`). Les commentaires expliquent **pourquoi**, pas quoi :
