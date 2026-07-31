@@ -21,10 +21,12 @@ const VARIANTS: Record<Variant, string> = {
   danger: 'text-danger hover:bg-danger-soft/60 active:bg-danger-soft',
 }
 
+// `icon` is 44px square, the smallest target a thumb hits reliably — it is used
+// for controls that carry no label of their own, where a miss is a mystery.
 const SIZES: Record<Size, string> = {
-  icon: 'h-7 w-7 shrink-0 text-sm leading-none',
-  sm: 'h-8 px-3 text-sm',
-  md: 'h-10 px-4 text-sm',
+  icon: 'h-11 w-11 shrink-0 text-lg leading-none',
+  sm: 'h-9 px-3 text-sm',
+  md: 'h-11 px-4 text-sm',
   lg: 'h-12 px-8 text-base',
 }
 

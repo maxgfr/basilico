@@ -91,29 +91,49 @@ test('export then erase then import restores the state', async ({ page }) => {
   await expect(page.getByText('Task to back up')).toBeVisible()
 })
 
-test('row actions are reachable on both pointer kinds', async ({ page }, testInfo) => {
+test('row actions live in one menu, identical on every device', async ({ page }) => {
   await page.getByLabel('Task title').fill('Reachable task')
   await page.getByRole('button', { name: 'Add' }).click()
 
-  const rename = page.getByRole('button', { name: 'Rename Reachable task' })
   const more = page.getByRole('button', { name: 'Actions for Reachable task' })
+  const menu = page.getByRole('dialog', { name: 'Actions for Reachable task' })
 
-  if (testInfo.project.name === 'mobile') {
-    // No hover here, so a permanent disclosure is the only discoverable route.
-    // The earlier CSS-only attempt left the hover overlay in the DOM, where it
-    // reappeared on focus and swallowed this button's tap.
-    await expect(more).toBeVisible()
-    await expect(rename).toHaveCount(0)
-    await more.tap()
-    await expect(more).toHaveAttribute('aria-expanded', 'true')
-    await expect(rename).toBeVisible()
-  } else {
-    // A pointer device keeps the hover overlay and never shows the disclosure,
-    // so the same action is never announced twice.
-    await expect(more).toHaveCount(0)
-    await page.getByRole('listitem').filter({ hasText: 'Reachable task' }).hover()
-    await expect(rename).toBeVisible()
-  }
+  // Permanently visible and the same everywhere: hover is not an affordance a
+  // phone has, and the two branches this replaces could drift apart.
+  await expect(more).toBeVisible()
+  const box = await more.boundingBox()
+  expect(box?.width).toBeGreaterThanOrEqual(44)
+  expect(box?.height).toBeGreaterThanOrEqual(44)
+
+  await more.click()
+  await expect(menu).toBeVisible()
+  await expect(menu.getByRole('button', { name: 'Edit' })).toBeVisible()
+
+  // Every destructive action says what it costs before you reach it.
+  await expect(menu).toContainText('Cannot be undone')
+
+  await page.keyboard.press('Escape')
+  await expect(menu).toBeHidden()
+  await expect(more).toBeFocused()
+})
+
+test('a task carries a description you can come back to', async ({ page }) => {
+  await page.getByLabel('Task title').fill('Ship the parser')
+  await page.getByRole('button', { name: 'Add' }).click()
+
+  await page.getByRole('button', { name: 'Actions for Ship the parser' }).click()
+  await page.getByRole('button', { name: 'Edit' }).click()
+
+  await page
+    .getByLabel('Description of Ship the parser')
+    .fill('Behind the flag, and only the parser')
+  await page.getByRole('button', { name: 'Save' }).click()
+
+  await expect(page.getByText('Behind the flag, and only the parser')).toBeVisible()
+
+  // And it survives a reload, like the rest of the list.
+  await page.reload()
+  await expect(page.getByText('Behind the flag, and only the parser')).toBeVisible()
 })
 
 test('switch knobs stay inside their track', async ({ page }) => {
@@ -190,7 +210,7 @@ test('a focus session can be ended by hand and still count', async ({ page }) =>
   await expect(page.getByText('How did that session go?')).toBeVisible()
 })
 
-test('today and the backlog are two different lists', async ({ page }, testInfo) => {
+test('today and the backlog are two different lists', async ({ page }) => {
   await page.getByLabel('Task title').fill('Do it now')
   await page.getByRole('button', { name: 'Add' }).click()
 
@@ -200,13 +220,8 @@ test('today and the backlog are two different lists', async ({ page }, testInfo)
   await expect(today.getByText('Do it now')).toBeVisible()
   await expect(page.getByRole('region', { name: 'Backlog' })).toHaveCount(0)
 
-  const row = page.getByRole('listitem').filter({ hasText: 'Do it now' })
-  if (testInfo.project.name === 'mobile') {
-    await row.getByRole('button', { name: 'Actions for Do it now' }).tap()
-  } else {
-    await row.hover()
-  }
-  await page.getByRole('button', { name: 'Move Do it now to the backlog' }).click()
+  await page.getByRole('button', { name: 'Actions for Do it now' }).click()
+  await page.getByRole('button', { name: 'Move to the backlog' }).click()
 
   await expect(page.getByRole('region', { name: 'Backlog' }).getByText('Do it now')).toBeVisible()
   await expect(today.getByText('Do it now')).toHaveCount(0)

@@ -199,6 +199,40 @@ before the flip kept `false` for good. Start, skip, skip, and the timer sat ther
 on "Start". Hence both halves of the fix: the intent above, and a `1 → 2`
 migration repairing that exact pair.
 
+## One menu, not a bar of icons
+
+A task row's actions went through three shapes. Six text buttons in the flow
+clipped the titles down to `R...`. Six revealed on hover measured ~385px in a
+20rem column, so they spilled out of it and over the timer — and touch has no
+hover, which meant a second, permanent disclosure for phones and two sets of the
+same actions in the DOM. Shrinking them to glyphs fixed the arithmetic and lost
+the meaning: six symbols nobody reads the same way twice.
+
+So: one `⋯` menu, on every device, opened by a 44px target that is always
+visible. It costs a tap that hovering did not, and buys back the thing every
+version before it lacked — room for each action to say what it does, which is
+what people kept asking. One branch also means one set of actions announced
+once, and no overlay that can cover the control meant to open it.
+
+Two rules the menu itself follows. It is `fixed`, never absolutely positioned in
+the row: a list inside a scrolling column gets clipped by the first ancestor with
+`overflow`. And it measures the room above and below its trigger, opens toward
+whichever has more, and caps its own height to fit — a phone is short, and a menu
+running off the bottom of the screen is unreachable. It follows the trigger on
+scroll rather than closing, because on a phone the address bar collapsing is a
+scroll event, and a menu that shuts as you reach for it is worse than one that
+moves.
+
+**Descriptions.** A task always had a `notes` field — in the type, in
+`createTask`, in the backup schema — and nothing ever showed it. Editing a task
+now edits title, description and estimate together, which is also why the form
+gained explicit Save and Cancel: the single rename field committed on blur, and
+blur cannot commit three controls when moving between them is the gesture that
+would save.
+
+Fields carry `text-base`, not `text-sm`. iOS zooms the whole page in when a
+focused input's text is under 16px, and every field in the list used to be 14.
+
 ## Two sheets, not one list
 
 Cirillo works with an **activity inventory** — everything you might do — and a **to-do-today sheet**

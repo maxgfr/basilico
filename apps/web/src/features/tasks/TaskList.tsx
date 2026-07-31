@@ -1,4 +1,4 @@
-import { useRef, useState, type FormEvent } from 'react'
+import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react'
 import {
   backlog,
   dayKey,
@@ -11,9 +11,23 @@ import {
 } from '@basilico/core'
 import { useApp } from '../../store/app'
 import { Button } from '../../ui/Button'
+import { MenuItem, MenuSeparator, useMenu } from '../../ui/Menu'
 import { Pomodoros } from './Pomodoros'
 import { formatDuration } from '../../lib/format'
-import { useHoverCapable } from '../../platform/media'
+
+/**
+ * The shared field shape — colours, border and type, never a size.
+ *
+ * Sizing stays at the call site on purpose: two Tailwind utilities for the same
+ * property are resolved by their order in the generated stylesheet, not by the
+ * order they are written in, so a `w-full` baked in here silently beat the
+ * `w-14` meant to override it and the field covered the button beside it.
+ *
+ * `text-base` is not a style choice: iOS zooms the whole page in when a focused
+ * input's text is under 16px, and every field here used to be 14.
+ */
+const FIELD =
+  'border-ink-800 bg-ink-950 placeholder:text-ink-600 focus:border-ink-600 min-w-0 rounded-lg border px-3 text-base outline-none'
 
 export function TaskList() {
   const tasks = useApp((s) => s.tasks)
@@ -173,264 +187,282 @@ type RowProps = {
 }
 
 /**
- * The row's actions, rendered in two places: over the row on pointer devices,
- * and inside a disclosure on touch ones. One list, so they cannot drift.
+ * Every row action, behind one menu, on every device.
  *
- * The overlay is `icons`, because six text buttons measured ~385 px inside a
- * 320 px column: the bar shrank to its min-content, spilled out of the aside and
- * over the timer, and "To backlog" broke onto a second line inside a 32 px
- * button. Glyphs bring the same six actions down to ~216 px, which fits. The
- * disclosure keeps the words: it has a whole row's width and no hover to explain
- * a symbol.
+ * There used to be two: a bar of icons that appeared on hover, and a disclosure
+ * for touch. The icons were the problem — six of them in a 20 rem column with no
+ * room for labels, and a glyph nobody reads the same way twice. A menu costs one
+ * tap more and says what each action does, which is what the icons never could.
+ * One branch also means one set of actions in the DOM, so nothing is announced
+ * twice and no overlay can sit on top of the control meant to open it.
  */
-type RowAction = {
-  key: string
-  label: string
-  icon: string
-  hint: string
-  danger?: boolean
-  disabled?: boolean
-  onClick: () => void
-}
-
-function useRowActions(task: Task, index: number, count: number, onEdit: () => void): RowAction[] {
+function RowMenu({
+  task,
+  index,
+  count,
+  onEdit,
+}: {
+  task: Task
+  index: number
+  count: number
+  onEdit: () => void
+}) {
   const setStatus = useApp((s) => s.setStatus)
   const dropTask = useApp((s) => s.dropTask)
   const moveTask = useApp((s) => s.moveTask)
   const plan = useApp((s) => s.planTask)
-  const planned = task.plannedFor !== null
+  const menu = useMenu('end')
+  const [confirmingDelete, setConfirmingDelete] = useState(false)
 
-  return [
-    {
-      key: 'plan',
-      label: planned ? 'To backlog' : 'Today',
-      icon: planned ? '↩' : '↪',
-      hint: planned ? `Move ${task.title} to the backlog` : `Plan ${task.title} for today`,
-      onClick: () => plan(task.id, planned ? null : dayKey(Date.now())),
-    },
-    {
-      key: 'up',
-      label: 'Move up',
-      icon: '↑',
-      hint: `Move ${task.title} up`,
-      disabled: index === 0,
-      onClick: () => moveTask(task.id, index - 1),
-    },
-    {
-      key: 'down',
-      label: 'Move down',
-      icon: '↓',
-      hint: `Move ${task.title} down`,
-      disabled: index === count - 1,
-      onClick: () => moveTask(task.id, index + 1),
-    },
-    {
-      key: 'rename',
-      label: 'Rename',
-      icon: '✎',
-      hint: `Rename ${task.title}`,
-      onClick: onEdit,
-    },
-    {
-      key: 'archive',
-      label: 'Archive',
-      icon: '⧉',
-      hint: `Archive ${task.title}`,
-      onClick: () => setStatus(task.id, 'archived', Date.now()),
-    },
-    {
-      key: 'delete',
-      label: 'Delete',
-      icon: '✕',
-      hint: `Delete ${task.title}`,
-      danger: true,
-      onClick: () => dropTask(task.id),
-    },
-  ]
+  const planned = task.plannedFor !== null
+  const label = `Actions for ${task.title}`
+
+  /** Closes first, then acts: the row may not survive the action. */
+  const run = (fn: () => void, refocus = true) => {
+    menu.close(refocus)
+    setConfirmingDelete(false)
+    fn()
+  }
+
+  return (
+    <div ref={menu.container} className="shrink-0">
+      <Button
+        variant="ghost"
+        size="icon"
+        aria-label={label}
+        {...menu.triggerProps}
+        onClick={() => {
+          // Reopening must never land on a half-confirmed delete.
+          setConfirmingDelete(false)
+          menu.triggerProps.onClick()
+        }}
+      >
+        <span aria-hidden="true">⋯</span>
+      </Button>
+
+      {menu.open && (
+        <div {...menu.panelProps} aria-label={label}>
+          <MenuItem
+            label="Edit"
+            meaning="Title, description and estimate."
+            onClick={() => run(onEdit, false)}
+          />
+          <MenuItem
+            label={planned ? 'Move to the backlog' : 'Plan for today'}
+            meaning={
+              planned
+                ? 'Off today’s plan, still on the inventory.'
+                : 'Onto today’s plan, where it counts towards the day.'
+            }
+            onClick={() => run(() => plan(task.id, planned ? null : dayKey(Date.now())))}
+          />
+
+          <MenuSeparator>Order</MenuSeparator>
+          <MenuItem
+            label="Move up"
+            disabled={index === 0}
+            onClick={() => index > 0 && run(() => moveTask(task.id, index - 1))}
+          />
+          <MenuItem
+            label="Move down"
+            disabled={index === count - 1}
+            onClick={() => index < count - 1 && run(() => moveTask(task.id, index + 1))}
+          />
+
+          <MenuSeparator>Remove</MenuSeparator>
+          <MenuItem
+            label="Archive"
+            meaning="Out of the lists, kept in your history."
+            onClick={() => run(() => setStatus(task.id, 'archived', Date.now()), false)}
+          />
+          {/* Two steps, like erasing the data: a menu is one tap away from a
+              thumb, and this is the only row action nothing can undo. */}
+          {confirmingDelete ? (
+            <>
+              <MenuItem
+                label="Yes, delete it"
+                meaning="Gone for good. Sessions already recorded stay in the stats."
+                danger
+                onClick={() => run(() => dropTask(task.id), false)}
+              />
+              <MenuItem label="Cancel" onClick={() => setConfirmingDelete(false)} />
+            </>
+          ) : (
+            <MenuItem
+              label="Delete"
+              meaning="Cannot be undone."
+              danger
+              onClick={() => setConfirmingDelete(true)}
+            />
+          )}
+        </div>
+      )}
+    </div>
+  )
 }
 
-function RowActions({ actions, as }: { actions: RowAction[]; as: 'icons' | 'labels' }) {
+/**
+ * Title, description and estimate in one form.
+ *
+ * It replaces a single rename field that committed on blur. Blur cannot commit a
+ * form with three controls — moving between them would save twice and leave no
+ * way back out — so this one says Save and Cancel, which is also the only thing
+ * that reads as safe under a thumb.
+ */
+function TaskEditor({ task, onDone }: { task: Task; onDone: () => void }) {
+  const rename = useApp((s) => s.renameTask)
+  const editTask = useApp((s) => s.editTask)
+
+  const [title, setTitle] = useState(task.tag ? `${task.title} #${task.tag}` : task.title)
+  const [notes, setNotes] = useState(task.notes ?? '')
+  const [estimate, setEstimate] = useState(task.estimatedPomodoros)
+
+  // Focus moved by hand rather than with `autoFocus`: the attribute is a
+  // usability problem when a page loads with it, but here the field only appears
+  // because the user asked to edit, and leaving focus behind strands the
+  // keyboard.
+  //
+  // The callback must be stable. An inline one is a new function every render,
+  // so React re-runs it on every keystroke — which re-selected the title under
+  // the cursor, and pulled focus out of the description after one character.
+  const focusInput = useCallback((node: HTMLInputElement | null) => {
+    node?.focus()
+    node?.select()
+  }, [])
+
+  // Escape abandons the edit from anywhere in the form, including the buttons —
+  // a mistyped rename has to be backed out of without hunting for Cancel. On the
+  // document rather than the form: a form is not an interactive element, and
+  // handlers hung on one only fire while focus is inside it.
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onDone()
+    }
+    document.addEventListener('keydown', onKeyDown)
+    return () => document.removeEventListener('keydown', onKeyDown)
+  }, [onDone])
+
+  const submit = (event: FormEvent) => {
+    event.preventDefault()
+    if (title.trim() === '') return
+    rename(task.id, title)
+    editTask(task.id, {
+      notes: notes.trim() === '' ? null : notes.trim(),
+      estimatedPomodoros: Math.max(1, Math.round(estimate) || 1),
+    })
+    onDone()
+  }
+
   return (
-    <>
-      {actions.map((action) => (
-        <Button
-          key={action.key}
-          variant={action.danger ? 'danger' : 'ghost'}
-          size={as === 'icons' ? 'icon' : 'sm'}
-          aria-label={action.hint}
-          title={as === 'icons' ? action.hint : undefined}
-          // `aria-disabled`, not `disabled`: moving a task to the top disables
-          // the very button holding focus, the browser drops focus to <body>,
-          // and the bar this button lives in vanishes mid-click.
-          aria-disabled={action.disabled || undefined}
-          className={action.disabled ? 'cursor-not-allowed opacity-40' : ''}
-          onClick={() => {
-            if (action.disabled) return
-            action.onClick()
-          }}
-        >
-          {as === 'icons' ? <span aria-hidden="true">{action.icon}</span> : action.label}
-        </Button>
-      ))}
-    </>
+    <li className="bg-ink-900 ring-ink-800 rounded-xl p-3 ring-1">
+      <form onSubmit={submit} className="flex flex-col gap-3">
+        <input
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          aria-label={`Title of ${task.title}`}
+          ref={focusInput}
+          className={`${FIELD} h-11 w-full`}
+        />
+        <textarea
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+          rows={3}
+          placeholder="Description — anything you need at hand when you start (optional)"
+          aria-label={`Description of ${task.title}`}
+          className={`${FIELD} w-full resize-y py-2 leading-relaxed`}
+        />
+        <div className="flex flex-wrap items-center gap-2">
+          <label className="text-ink-600 flex items-center gap-2 text-sm">
+            <input
+              type="number"
+              min={1}
+              max={20}
+              value={estimate}
+              onChange={(e) => setEstimate(Math.max(1, Number(e.target.value) || 1))}
+              aria-label={`Estimated pomodoros for ${task.title}`}
+              className={`${FIELD} tabular h-11 w-16 px-2 text-center`}
+            />
+            pomodoros
+          </label>
+          <span className="flex-1" />
+          <Button type="button" variant="ghost" onClick={onDone}>
+            Cancel
+          </Button>
+          <Button type="submit" variant="primary" disabled={title.trim() === ''}>
+            Save
+          </Button>
+        </div>
+      </form>
+    </li>
   )
 }
 
 function TaskRow({ task, index, count, spentMs, active, onActivate }: RowProps) {
   const setStatus = useApp((s) => s.setStatus)
-  const rename = useApp((s) => s.renameTask)
   const [editing, setEditing] = useState(false)
-  const [open, setOpen] = useState(false)
-  const hoverCapable = useHoverCapable()
   const isDone = task.status === 'done'
-  const panelId = `actions-${task.id}`
+  // Stable: the editor hangs a document listener on it.
+  const stopEditing = useCallback(() => setEditing(false), [])
 
-  // Two lists rather than one: the disclosure has to close itself on rename,
-  // the overlay has nothing to close.
-  const hoverActions = useRowActions(task, index, count, () => setEditing(true))
-  const touchActions = useRowActions(task, index, count, () => {
-    setOpen(false)
-    setEditing(true)
-  })
+  if (editing) return <TaskEditor task={task} onDone={stopEditing} />
 
-  // Focus moved by hand rather than with `autoFocus`: the attribute is a usability
-  // problem when a page loads with it, but here the field only appears because
-  // the user asked to rename, and leaving focus behind would strand the keyboard.
-  const focusInput = (node: HTMLInputElement | null) => {
-    node?.focus()
-    node?.select()
-  }
-
-  if (editing) {
-    return (
-      <li className="bg-ink-900 flex min-h-13 items-center rounded-lg px-3 py-2">
-        <form
-          onSubmit={(event) => {
-            event.preventDefault()
-            const value = new FormData(event.currentTarget).get('title')
-            if (typeof value === 'string') rename(task.id, value)
-            setEditing(false)
-          }}
-        >
-          <input
-            name="title"
-            defaultValue={task.tag ? `${task.title} #${task.tag}` : task.title}
-            aria-label={`Rename ${task.title}`}
-            // Escape must abandon the edit: committing on blur alone would make
-            // a mistyped rename impossible to back out of.
-            onKeyDown={(event) => event.key === 'Escape' && setEditing(false)}
-            onBlur={(event) => {
-              rename(task.id, event.target.value)
-              setEditing(false)
-            }}
-            ref={focusInput}
-            className="border-ink-800 bg-ink-950 focus:border-ink-600 h-8 w-full rounded border px-2 text-sm outline-none"
-          />
-        </form>
-      </li>
-    )
-  }
+  const hasMeta = Boolean(task.tag) || spentMs > 0 || needsBreakdown(task)
 
   return (
-    // `min-h`: the meta line only exists on some rows, and "12m spent" appears
-    // mid-session — without a floor the row grew 16 px under the cursor and the
-    // whole list jumped. It also matches the rename row, so editing sits still.
     <li
-      className={`group relative flex min-h-13 flex-col justify-center rounded-lg px-3 py-2 transition-colors duration-150 motion-reduce:transition-none ${
+      className={`rounded-xl px-1 py-1 transition-colors duration-150 motion-reduce:transition-none ${
         active
           ? 'bg-ink-900 ring-focus/40 ring-1'
           : 'hover:bg-ink-900 has-[:focus-visible]:bg-ink-900'
       }`}
     >
-      <div className="flex items-center gap-3">
-        <input
-          type="checkbox"
-          checked={isDone}
-          onChange={() => setStatus(task.id, isDone ? 'active' : 'done', Date.now())}
-          aria-label={isDone ? `Reopen ${task.title}` : `Complete ${task.title}`}
-          className="accent-focus size-4 shrink-0 cursor-pointer"
-        />
+      <div className="flex items-center gap-1">
+        {/* The box is 20px but its target is 44: a checkbox is the control most
+            often missed by a thumb, and the padding costs nothing visually. */}
+        <label className="flex size-11 shrink-0 cursor-pointer items-center justify-center">
+          <input
+            type="checkbox"
+            checked={isDone}
+            onChange={() => setStatus(task.id, isDone ? 'active' : 'done', Date.now())}
+            aria-label={isDone ? `Reopen ${task.title}` : `Complete ${task.title}`}
+            className="accent-focus size-5 cursor-pointer"
+          />
+        </label>
 
         <button
           type="button"
           onClick={onActivate}
-          className="focus-visible:outline-ink-300 min-w-0 flex-1 text-left focus-visible:outline-2 focus-visible:outline-offset-2"
+          className="focus-visible:outline-ink-300 min-w-0 flex-1 rounded-lg py-1.5 text-left focus-visible:outline-2 focus-visible:outline-offset-2"
           aria-pressed={active}
         >
-          <span className={`block truncate text-sm ${isDone ? 'text-ink-600 line-through' : ''}`}>
+          <span className={`block truncate ${isDone ? 'text-ink-600 line-through' : ''}`}>
             {task.title}
           </span>
-          {/* Rendered only when it has something to say: an empty flex box still
-              costs its own line box, and the row would size differently for no
-              visible reason. */}
-          {(task.tag || spentMs > 0 || needsBreakdown(task)) && (
-            <span className="text-ink-600 flex flex-wrap items-center gap-x-2 text-xs">
-              {task.tag && <span>#{task.tag}</span>}
-              {spentMs > 0 && <span className="tabular">{formatDuration(spentMs)} spent</span>}
-              {needsBreakdown(task) && (
-                <span
-                  className="text-long"
-                  title="Cirillo: more than 5-7 pomodoros means it is really several tasks"
-                >
-                  too big — break it down
-                </span>
-              )}
-            </span>
-          )}
         </button>
 
-        <Pomodoros done={task.completedPomodoros} estimated={task.estimatedPomodoros} />
+        <RowMenu task={task} index={index} count={count} onEdit={() => setEditing(true)} />
+      </div>
 
-        {/*
-          Touch devices have no hover, so the overlay would only ever appear after
-          tapping the row — reachable, but nobody would ever find it. They get a
-          permanent disclosure instead. Showing all five buttons inline was the
-          other option, and it clipped the titles all over again.
-        */}
-        {!hoverCapable && (
-          <button
-            type="button"
-            onClick={() => setOpen((v) => !v)}
-            aria-expanded={open}
-            aria-controls={panelId}
-            aria-label={`Actions for ${task.title}`}
-            className="text-ink-600 hover:text-ink-100 focus-visible:outline-ink-300 inline-flex h-8 w-7 shrink-0 items-center justify-center rounded-md text-lg leading-none focus-visible:outline-2"
+      {/* Everything secondary on one line under the title, aligned to it. The
+          title used to share its row with the dots and the counter, which is
+          what left it three words wide on a phone. */}
+      <div className="text-ink-600 flex flex-wrap items-center gap-x-2 gap-y-1 pr-2 pl-12 text-xs">
+        <Pomodoros done={task.completedPomodoros} estimated={task.estimatedPomodoros} />
+        {hasMeta && <span aria-hidden="true">·</span>}
+        {task.tag && <span>#{task.tag}</span>}
+        {spentMs > 0 && <span className="tabular">{formatDuration(spentMs)} spent</span>}
+        {needsBreakdown(task) && (
+          <span
+            className="text-long"
+            title="Cirillo: more than 5-7 pomodoros means it is really several tasks"
           >
-            ⋯
-          </button>
+            too big — break it down
+          </span>
         )}
       </div>
 
-      {!hoverCapable && open && (
-        <div id={panelId} className="mt-1 flex flex-wrap items-center gap-1">
-          <RowActions actions={touchActions} as="labels" />
-        </div>
-      )}
-
-      {/*
-        Actions sit on top of the row rather than beside it: in a narrow column,
-        keeping them in the flow clipped task titles down to "R...". The gradient
-        blends the overlay into the row background.
-
-        Mounted always and faded with opacity rather than flipped from `hidden`:
-        `display` cannot transition, so the opaque panel used to land instantly
-        on a row background still 150 ms into its own fade — a seam that read as
-        a glitch. `pointer-events-none` while hidden keeps the title clickable.
-
-        `has-[:focus-visible]` rather than `focus-within`: the latter fires on
-        click focus too, so selecting a task left the bar pinned over the title
-        it had just covered. Keyboard focus still opens it.
-      */}
-      {hoverCapable && (
-        <div className="pointer-events-none absolute inset-y-0 right-0 z-10 flex items-stretch opacity-0 transition-opacity duration-150 group-hover:pointer-events-auto group-hover:opacity-100 group-has-[:focus-visible]:pointer-events-auto group-has-[:focus-visible]:opacity-100 motion-reduce:transition-none">
-          {/* The fade is its own fixed-width strip rather than a gradient across
-              the whole bar: spread over the buttons, its midpoint fell under the
-              first two icons and the task title read straight through them. */}
-          <span aria-hidden="true" className="from-ink-900/0 to-ink-900 w-8 bg-gradient-to-r" />
-          <span className="bg-ink-900 flex items-center gap-1 rounded-r-lg pr-1">
-            <RowActions actions={hoverActions} as="icons" />
-          </span>
-        </div>
+      {task.notes && (
+        <p className="text-ink-600 line-clamp-2 pr-2 pl-12 text-xs leading-relaxed">{task.notes}</p>
       )}
     </li>
   )
@@ -464,7 +496,7 @@ function AddTaskForm({
           placeholder="What are you working on?"
           aria-label="Task title"
           aria-describedby={`${listId}-hint`}
-          className="border-ink-800 bg-ink-900 placeholder:text-ink-600 focus:border-ink-600 h-10 min-w-0 flex-1 rounded-lg border px-3 text-sm outline-none"
+          className={`${FIELD} bg-ink-900 h-11 flex-1`}
         />
         <input
           type="number"
@@ -474,16 +506,16 @@ function AddTaskForm({
           onChange={(e) => setEstimate(Math.max(1, Number(e.target.value) || 1))}
           aria-label="Estimated pomodoros"
           title="Estimated pomodoros"
-          className="border-ink-800 bg-ink-900 tabular focus:border-ink-600 h-10 w-12 shrink-0 rounded-lg border px-1 text-center text-sm outline-none"
+          className={`${FIELD} bg-ink-900 tabular h-11 w-12 shrink-0 px-1 text-center`}
         />
         {/* Compact button: in a 20 rem column, spelling out "Add" pushed the form
             onto a second line. */}
         <Button
           type="submit"
           variant="secondary"
+          size="icon"
           aria-label="Add"
           disabled={raw.trim() === ''}
-          className="shrink-0 px-3 text-lg"
         >
           +
         </Button>

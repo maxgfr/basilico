@@ -87,20 +87,54 @@ describe('tasks', () => {
     expect(screen.getByRole('button', { name: '#basilico' })).toBeInTheDocument()
   })
 
-  it('renames in place and re-reads the tag', async () => {
+  it('edits title, tag and description in one form', async () => {
     const user = userEvent.setup()
     render(<App />)
     await user.type(screen.getByLabelText('Task title'), 'Old name')
     await user.click(screen.getByRole('button', { name: 'Add' }))
 
-    await user.click(screen.getByRole('button', { name: 'Rename Old name' }))
-    const field = screen.getByLabelText('Rename Old name')
-    await user.clear(field)
-    await user.type(field, 'New name #work{Enter}')
+    await user.click(screen.getByRole('button', { name: 'Actions for Old name' }))
+    await user.click(screen.getByRole('button', { name: 'Edit' }))
+
+    const title = screen.getByLabelText('Title of Old name')
+    await user.clear(title)
+    await user.type(title, 'New name #work')
+    await user.type(screen.getByLabelText('Description of Old name'), 'The parser, not the printer')
+    await user.click(screen.getByRole('button', { name: 'Save' }))
 
     const task = useApp.getState().tasks[0]
     expect(task?.title).toBe('New name')
     expect(task?.tag).toBe('work')
+    expect(task?.notes).toBe('The parser, not the printer')
+  })
+
+  it('shows the description on the row once it has one', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+    await user.type(screen.getByLabelText('Task title'), 'Ship it')
+    await user.click(screen.getByRole('button', { name: 'Add' }))
+
+    await user.click(screen.getByRole('button', { name: 'Actions for Ship it' }))
+    await user.click(screen.getByRole('button', { name: 'Edit' }))
+    await user.type(screen.getByLabelText('Description of Ship it'), 'Behind the flag first')
+    await user.click(screen.getByRole('button', { name: 'Save' }))
+
+    expect(screen.getByText('Behind the flag first')).toBeInTheDocument()
+  })
+
+  it('asks twice before deleting a task', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+    await user.type(screen.getByLabelText('Task title'), 'Fragile')
+    await user.click(screen.getByRole('button', { name: 'Add' }))
+
+    await user.click(screen.getByRole('button', { name: 'Actions for Fragile' }))
+    await user.click(screen.getByRole('button', { name: 'Delete' }))
+    // One tap is not enough: this is the only row action nothing can undo.
+    expect(useApp.getState().tasks).toHaveLength(1)
+
+    await user.click(screen.getByRole('button', { name: 'Yes, delete it' }))
+    expect(useApp.getState().tasks).toHaveLength(0)
   })
 
   it('carries the active task tag onto the session', async () => {
