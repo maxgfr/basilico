@@ -244,6 +244,19 @@ the day rather than a boolean is what makes carry-over possible: a task still da
 visibly unfinished business, and it rolls forward on load. Finished tasks keep their date — that is
 the record of when they were done.
 
+Both sheets are on screen whether or not they have anything on them. The backlog
+used to appear only once something was in it, which made the half of the model
+that gives the other half its meaning impossible to discover — and left "Move to
+the backlog" pointing at a place nobody had seen. An empty one says what it is
+for instead.
+
+Archiving is the reversible way out, where deleting is not: it keeps the task and
+its sessions. That only holds if you can still see what you archived, and for a
+while you could not — archived tasks were filtered out of both lists and shown on
+no screen at all, present in storage and in the export and nowhere else. They now
+sit in a drawer under the lists, and Restore puts one back in the backlog rather
+than on the day it was once planned for, which has long since gone by.
+
 The plan then converts itself into the only number that matters: five pomodoros left is a little over
 two hours, and that is what tells you whether today fits. Past the daily goal it says so.
 

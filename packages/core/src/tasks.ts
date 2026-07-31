@@ -92,6 +92,18 @@ export function backlog(tasks: readonly Task[]): Task[] {
     .toSorted((a, b) => a.order - b.order)
 }
 
+/**
+ * Everything archived, newest first.
+ *
+ * Archiving is meant to be the reversible way out — the one that keeps a task's
+ * history where deleting drops it. That only holds if you can still see what you
+ * archived: without this the tasks sat in storage and in the export, and nowhere
+ * in the app.
+ */
+export function archivedTasks(tasks: readonly Task[]): Task[] {
+  return tasks.filter((t) => t.status === 'archived').toSorted((a, b) => b.createdAt - a.createdAt)
+}
+
 export type DayLoad = {
   estimated: number
   completed: number

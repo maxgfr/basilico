@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react'
+import { useCallback, useEffect, useId, useRef, useState, type FormEvent } from 'react'
 import {
+  archivedTasks,
   backlog,
   dayKey,
   dayLoad,
@@ -43,6 +44,7 @@ export function TaskList() {
   const open = plan.filter((t) => t.status === 'active')
   const done = plan.filter((t) => t.status === 'done')
   const waiting = backlog(tasks)
+  const archived = archivedTasks(tasks)
   const load = dayLoad(tasks, today)
   const spent = timeByTask(sessions)
 
@@ -109,14 +111,27 @@ export function TaskList() {
         )}
       </section>
 
-      {waiting.length > 0 && (
-        <section aria-labelledby="backlog-heading" className="flex flex-col gap-3">
-          <div className="flex items-baseline justify-between gap-3">
-            <h2 id="backlog-heading" className="text-sm font-medium tracking-wide uppercase">
-              Backlog
-            </h2>
+      {/*
+        Always rendered, empty or not. It is one of Cirillo's two sheets and half
+        of what the task model is built around — hidden until it happened to have
+        something in it, nobody could find out it existed, and "Move to the
+        backlog" pointed at a place they had never seen.
+      */}
+      <section aria-labelledby="backlog-heading" className="flex flex-col gap-3">
+        <div className="flex items-baseline justify-between gap-3">
+          <h2 id="backlog-heading" className="text-sm font-medium tracking-wide uppercase">
+            Backlog
+          </h2>
+          {waiting.length > 0 && (
             <span className="text-ink-600 text-xs">{waiting.length} waiting</span>
-          </div>
+          )}
+        </div>
+        {waiting.length === 0 ? (
+          <p className="border-ink-800 text-ink-600 rounded-xl border border-dashed p-4 text-xs">
+            Everything you might do one day, without a date on it. Move a task here from its ⋯ menu
+            when it is not for today.
+          </p>
+        ) : (
           <ul className="flex flex-col gap-1">
             {waiting.map((task, index) => (
               <TaskRow
@@ -130,6 +145,30 @@ export function TaskList() {
               />
             ))}
           </ul>
+        )}
+      </section>
+
+      {/*
+        Archiving was a one-way trip out of the interface: the tasks stayed in
+        storage and in the export, and no screen ever showed them again. Folded
+        away, because it is a place you go looking for something, not a list you
+        read.
+      */}
+      {archived.length > 0 && (
+        <section aria-labelledby="archived-heading" className="flex flex-col gap-3">
+          <h2 id="archived-heading" className="sr-only">
+            Archived
+          </h2>
+          <details className="text-ink-600 text-sm">
+            <summary className="hover:text-ink-300 cursor-pointer py-1 select-none">
+              {archived.length} archived
+            </summary>
+            <ul className="mt-2 flex flex-col gap-1">
+              {archived.map((task) => (
+                <ArchivedRow key={task.id} task={task} />
+              ))}
+            </ul>
+          </details>
         </section>
       )}
     </div>
@@ -403,6 +442,7 @@ function TaskRow({ task, index, count, spentMs, active, onActivate }: RowProps) 
   const isDone = task.status === 'done'
   // Stable: the editor hangs a document listener on it.
   const stopEditing = useCallback(() => setEditing(false), [])
+  const detailsId = useId()
 
   if (editing) return <TaskEditor task={task} onDone={stopEditing} />
 
@@ -416,7 +456,7 @@ function TaskRow({ task, index, count, spentMs, active, onActivate }: RowProps) 
           : 'hover:bg-ink-900 has-[:focus-visible]:bg-ink-900'
       }`}
     >
-      <div className="flex items-center gap-1">
+      <div className="flex items-start gap-1">
         {/* The box is 20px but its target is 44: a checkbox is the control most
             often missed by a thumb, and the padding costs nothing visually. */}
         <label className="flex size-11 shrink-0 cursor-pointer items-center justify-center">
@@ -429,41 +469,92 @@ function TaskRow({ task, index, count, spentMs, active, onActivate }: RowProps) 
           />
         </label>
 
+        {/*
+          The whole middle column picks the task, not just its title. Choosing
+          what you are working on is the action this list exists for, and it was
+          a target one line of text tall — miss it by a few pixels on a phone and
+          nothing happens at all.
+        */}
         <button
           type="button"
           onClick={onActivate}
-          className="focus-visible:outline-ink-300 min-w-0 flex-1 rounded-lg py-1.5 text-left focus-visible:outline-2 focus-visible:outline-offset-2"
+          className="focus-visible:outline-ink-300 min-w-0 flex-1 self-stretch rounded-lg py-2.5 text-left focus-visible:outline-2 focus-visible:outline-offset-2"
           aria-pressed={active}
+          // The name is the task. Taken from the content it would swallow the
+          // counter, the tag and the whole description with it — everything the
+          // button now covers is read out on focus otherwise.
+          aria-label={task.title}
+          aria-describedby={detailsId}
         >
           <span className={`block truncate ${isDone ? 'text-ink-600 line-through' : ''}`}>
             {task.title}
           </span>
+
+          {/* Everything secondary on one line under the title. The title used to
+              share its row with the dots and the counter, which is what left it
+              three words wide on a phone. */}
+          <span
+            id={detailsId}
+            className="text-ink-600 mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs"
+          >
+            <Pomodoros done={task.completedPomodoros} estimated={task.estimatedPomodoros} />
+            {hasMeta && <span aria-hidden="true">·</span>}
+            {task.tag && <span>#{task.tag}</span>}
+            {spentMs > 0 && <span className="tabular">{formatDuration(spentMs)} spent</span>}
+            {needsBreakdown(task) && (
+              <span
+                className="text-long"
+                title="Cirillo: more than 5-7 pomodoros means it is really several tasks"
+              >
+                too big — break it down
+              </span>
+            )}
+          </span>
+
+          {task.notes && (
+            <span className="text-ink-600 mt-1 line-clamp-2 text-xs leading-relaxed">
+              {task.notes}
+            </span>
+          )}
         </button>
 
         <RowMenu task={task} index={index} count={count} onEdit={() => setEditing(true)} />
       </div>
+    </li>
+  )
+}
 
-      {/* Everything secondary on one line under the title, aligned to it. The
-          title used to share its row with the dots and the counter, which is
-          what left it three words wide on a phone. */}
-      <div className="text-ink-600 flex flex-wrap items-center gap-x-2 gap-y-1 pr-2 pl-12 text-xs">
-        <Pomodoros done={task.completedPomodoros} estimated={task.estimatedPomodoros} />
-        {hasMeta && <span aria-hidden="true">·</span>}
-        {task.tag && <span>#{task.tag}</span>}
-        {spentMs > 0 && <span className="tabular">{formatDuration(spentMs)} spent</span>}
-        {needsBreakdown(task) && (
-          <span
-            className="text-long"
-            title="Cirillo: more than 5-7 pomodoros means it is really several tasks"
-          >
-            too big — break it down
-          </span>
-        )}
-      </div>
+/**
+ * An archived task, and the two things you can still do to it.
+ *
+ * No checkbox, no menu: it is out of both lists, and the order it sits in stops
+ * meaning anything the moment it leaves them.
+ */
+function ArchivedRow({ task }: { task: Task }) {
+  const editTask = useApp((s) => s.editTask)
+  const dropTask = useApp((s) => s.dropTask)
 
-      {task.notes && (
-        <p className="text-ink-600 line-clamp-2 pr-2 pl-12 text-xs leading-relaxed">{task.notes}</p>
-      )}
+  return (
+    <li className="hover:bg-ink-900 flex items-center gap-2 rounded-xl py-1 pr-1 pl-3 transition-colors duration-150 motion-reduce:transition-none">
+      <span className="text-ink-600 min-w-0 flex-1 truncate text-sm">{task.title}</span>
+      <Button
+        variant="ghost"
+        size="sm"
+        // Back to the inventory rather than to the day it was once planned for:
+        // that day is in the past, and it would land nowhere visible.
+        onClick={() => editTask(task.id, { status: 'active', plannedFor: null })}
+      >
+        Restore
+      </Button>
+      <Button
+        variant="ghost"
+        size="icon"
+        aria-label={`Delete ${task.title}`}
+        title={`Delete ${task.title}`}
+        onClick={() => dropTask(task.id)}
+      >
+        <span aria-hidden="true">✕</span>
+      </Button>
     </li>
   )
 }

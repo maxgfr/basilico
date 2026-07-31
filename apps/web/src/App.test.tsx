@@ -122,6 +122,26 @@ describe('tasks', () => {
     expect(screen.getByText('Behind the flag first')).toBeInTheDocument()
   })
 
+  it('keeps an archived task reachable, and restores it to the backlog', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+    await user.type(screen.getByLabelText('Task title'), 'Someday')
+    await user.click(screen.getByRole('button', { name: 'Add' }))
+
+    await user.click(screen.getByRole('button', { name: 'Actions for Someday' }))
+    await user.click(screen.getByRole('button', { name: 'Archive' }))
+
+    // Archiving used to be a one-way trip out of the interface.
+    expect(screen.getByText('1 archived')).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Restore' }))
+    const task = useApp.getState().tasks[0]
+    expect(task?.status).toBe('active')
+    // Back to the inventory, not to a day that has already gone by.
+    expect(task?.plannedFor).toBeNull()
+    expect(screen.getByRole('region', { name: 'Backlog' })).toBeInTheDocument()
+  })
+
   it('asks twice before deleting a task', async () => {
     const user = userEvent.setup()
     render(<App />)

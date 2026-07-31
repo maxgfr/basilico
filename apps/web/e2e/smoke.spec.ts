@@ -215,14 +215,36 @@ test('today and the backlog are two different lists', async ({ page }) => {
   await page.getByRole('button', { name: 'Add' }).click()
 
   const today = page.getByRole('region', { name: 'Today' })
+  const backlogList = page.getByRole('region', { name: 'Backlog' })
   // A task you just typed is almost always one you are about to do, so it lands
   // on today rather than making you fish it back out of an inventory.
   await expect(today.getByText('Do it now')).toBeVisible()
-  await expect(page.getByRole('region', { name: 'Backlog' })).toHaveCount(0)
+  // The backlog is there before anything is in it: it is half the model, and
+  // hidden until it happened to be non-empty nobody could discover it.
+  await expect(backlogList).toBeVisible()
+  await expect(backlogList.getByText('Do it now')).toHaveCount(0)
 
   await page.getByRole('button', { name: 'Actions for Do it now' }).click()
   await page.getByRole('button', { name: 'Move to the backlog' }).click()
 
-  await expect(page.getByRole('region', { name: 'Backlog' }).getByText('Do it now')).toBeVisible()
+  await expect(backlogList.getByText('Do it now')).toBeVisible()
   await expect(today.getByText('Do it now')).toHaveCount(0)
+})
+
+test('an archived task can still be found and brought back', async ({ page }) => {
+  await page.getByLabel('Task title').fill('Someday maybe')
+  await page.getByRole('button', { name: 'Add' }).click()
+
+  await page.getByRole('button', { name: 'Actions for Someday maybe' }).click()
+  await page.getByRole('button', { name: 'Archive' }).click()
+
+  // Archiving used to take a task out of every screen there is.
+  const drawer = page.getByText('1 archived')
+  await expect(drawer).toBeVisible()
+  await drawer.click()
+
+  await page.getByRole('button', { name: 'Restore' }).click()
+  await expect(
+    page.getByRole('region', { name: 'Backlog' }).getByText('Someday maybe'),
+  ).toBeVisible()
 })
