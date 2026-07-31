@@ -9,6 +9,7 @@ import {
   pause,
   progress,
   remainingMs,
+  reset,
   resume,
   startPhase,
   type TimerContext,
@@ -185,6 +186,29 @@ describe('session end and chaining', () => {
     state = finish(state, ctxAt(T0 + 2 * MIN, settings), 'skipped').state
     expect(state.mode).toBe('focus')
     expect(state.status).toBe('running')
+  })
+
+  it('resets back to a focus phase, never onto a break', () => {
+    // Ending a session hands over the break already running, so Reset is the
+    // click right after it. Leaving the mode alone stranded you there: the next
+    // Start ran a break, and a reload came back to one.
+    const afterFocus = finish(running(), ctxAt(T0 + 25 * MIN), 'completed').state
+    expect(afterFocus.mode).toBe('shortBreak')
+
+    const back = reset(afterFocus, ctxAt(T0 + 26 * MIN))
+    expect(back.mode).toBe('focus')
+    expect(back.status).toBe('idle')
+    expect(remainingMs(back, T0 + 26 * MIN)).toBe(25 * MIN)
+  })
+
+  it('keeps a long break that was due across a reset', () => {
+    const state: TimerState = { ...running(), focusSinceLongBreak: 4 }
+    const back = reset(state, ctxAt(T0 + MIN))
+    expect(back.focusSinceLongBreak).toBe(4)
+    // Still due: `nextMode` compares with `>=`, not a modulo.
+    expect(
+      finish(startPhase(back, ctxAt(T0 + 2 * MIN)), ctxAt(T0 + 3 * MIN), 'completed').state.mode,
+    ).toBe('longBreak')
   })
 
   it('counts the pomodoro when a focus session is ended by hand', () => {

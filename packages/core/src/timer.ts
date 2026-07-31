@@ -142,12 +142,24 @@ export function resume(state: TimerState, ctx: TimerContext): TimerState {
   }
 }
 
-/** Resets the current phase without recording anything. */
+/**
+ * Resets without recording anything, and back to a focus phase.
+ *
+ * Reset is the way out of the cycle, and one that leaves you standing on a break
+ * is not a way out: every phase you end by hand hands over the next one, so
+ * after ending a session Reset was the natural next click — and it stranded you
+ * on a short break the next Start would have run. The cycle begins at focus, so
+ * this returns there.
+ *
+ * `focusSinceLongBreak` is deliberately untouched, and `nextMode` compares with
+ * `>=`: a long break that was due is still due after a reset.
+ */
 export function reset(state: TimerState, ctx: TimerContext): TimerState {
   return {
     ...state,
     status: 'idle',
-    plannedMs: plannedMsFor(ctx.settings, state.mode),
+    mode: 'focus',
+    plannedMs: plannedMsFor(ctx.settings, 'focus'),
     startedAt: null,
     endsAt: null,
     pausedAt: null,
