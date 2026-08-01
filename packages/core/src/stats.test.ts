@@ -90,6 +90,20 @@ describe('summary', () => {
   it('reports no completion rate without any focus session', () => {
     expect(summarize([]).completionRate).toBeNull()
   })
+
+  it('counts a skipped break in `skipped` but never in `skippedFocus`', () => {
+    // The two live side by side on purpose: `skipped` is every phase you
+    // skipped, `skippedFocus` is the one that belongs next to completedFocus
+    // and voidedFocus without mixing scopes.
+    const s = summarize([
+      focus(at(2026, 7, 31), 25),
+      focus(at(2026, 7, 31, 11), 2, { mode: 'shortBreak', outcome: 'skipped' }),
+      focus(at(2026, 7, 31, 12), 4, { outcome: 'skipped' }),
+    ])
+    expect(s.skipped).toBe(2)
+    expect(s.skippedFocus).toBe(1)
+    expect(s.completedFocus).toBe(1)
+  })
 })
 
 describe('daily series', () => {

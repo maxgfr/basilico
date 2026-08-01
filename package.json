@@ -12,6 +12,8 @@
   "scripts": {
     "dev": "pnpm --filter @basilico/web dev",
     "build": "pnpm --filter @basilico/web build",
+    "build:skill": "node scripts/build-skill.mjs",
+    "check:skill": "node scripts/build-skill.mjs --check",
     "preview": "pnpm --filter @basilico/web preview",
     "test": "pnpm -r test",
     "typecheck": "pnpm -r typecheck",
@@ -20,6 +22,7 @@
     "format:check": "prettier --check ."
   },
   "devDependencies": {
+    "esbuild": "^0.28.1",
     "oxlint": "^1.76.0",
     "prettier": "^3.9.6",
     "typescript": "~7.0.2"

@@ -9,6 +9,7 @@ import {
   pause,
   progress,
   remainingMs,
+  focusUntilLongBreak,
   reset,
   resume,
   startPhase,
@@ -209,6 +210,19 @@ describe('session end and chaining', () => {
     expect(
       finish(startPhase(back, ctxAt(T0 + 2 * MIN)), ctxAt(T0 + 3 * MIN), 'completed').state.mode,
     ).toBe('longBreak')
+  })
+
+  it('says how many focus sessions are left before the long break', () => {
+    const settings = ctxAt(T0).settings
+    expect(focusUntilLongBreak(running(), settings)).toBe(4)
+
+    const result = finish(running(), ctxAt(T0 + 20 * MIN), 'completed')
+    expect(focusUntilLongBreak(result.state, settings)).toBe(3)
+
+    // A long break already owed reads as zero rather than going negative:
+    // a reset preserves the counter, so it can sit past the threshold.
+    const owed: TimerState = { ...running(), focusSinceLongBreak: 6 }
+    expect(focusUntilLongBreak(owed, settings)).toBe(0)
   })
 
   it('counts the pomodoro when a focus session is ended by hand', () => {

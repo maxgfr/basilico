@@ -77,6 +77,40 @@ Prefer building it yourself? `pnpm --filter @basilico/extension build` produces 
 It isn't on the Chrome Web Store for now (paid developer account and review delay). The bridge to
 the page is a content script restricted to the app's own origin; the extension reads nothing else.
 
+## In your terminal, and in your coding agent
+
+The domain core has no DOM and takes its clock as an argument, so the same timer
+runs from a shell. `basilico` is an agent skill: install it once and Claude Code,
+Codex and OpenCode can all start a session, note an interruption, and tell you
+where the day stands.
+
+```sh
+npx skills add maxgfr/basilico --agent '*'
+```
+
+No build, no API key, no network — the engine is one self-contained file.
+
+```sh
+basilico start --task "Write the core" --intention "finish the stats block"
+basilico status                 # phase, cycle, this run, today
+basilico done                   # ends it and counts the pomodoro
+basilico skip | abandon         # keeps the time, loses the pomodoro
+basilico stats --today
+```
+
+Add `--json` to any command for machine-readable output, and
+`basilico install --all` to wire up `/focus`, `/basilico` and a status bar
+showing the phase and the time left.
+
+**There is no sync with the browser, and there cannot be** — `localStorage` is not
+readable from a shell and this project runs no server. `basilico export` writes
+the same backup Settings → Data reads, and `basilico import` accepts one back.
+It is a copy, not a link.
+
+**There is no alarm either.** Without a daemon, a command that is not running
+cannot ring. `basilico status` catches up instead: a phase that expired while you
+were away is recorded at its real end time, with an "ended 12 minutes ago" note.
+
 ## Keyboard shortcuts
 
 | Key       | Action                                  |
@@ -92,19 +126,25 @@ the page is a content script restricted to the app's own origin; the extension r
 ```bash
 pnpm install
 pnpm dev          # http://localhost:5173
-pnpm test         # core + components
+pnpm test         # core + cli + components
 pnpm typecheck
 pnpm lint
 pnpm build
+pnpm build:skill  # rebuilds the bundle the skill ships
 ```
 
 A pnpm monorepo:
 
 - **`packages/core`** — the domain: timer, cycles, sessions, tasks, stats, backups. Plain
   TypeScript, no DOM at all, tested with an injected clock rather than real waiting.
+- **`packages/cli`** — the terminal interface, on that same core. Its state file and its clock are
+  injected too, so the whole CLI is tested without touching a real disk.
 - **`apps/web`** — the React interface and the browser adapters (notifications, audio, storage,
   wake lock).
 - **`apps/extension`** — the Chrome MV3 extension.
+- **`skills/basilico`** — the agent skill: `SKILL.md` plus a committed esbuild bundle of the CLI,
+  since `npx skills add` copies a directory and runs no build. `pnpm check:skill` fails the build
+  if that bundle has drifted from its source, and CI runs it.
 
 The timer is driven by an **absolute deadline**, never by a decremented counter: the remaining time
 is recomputed from the clock, which makes it immune to background-tab throttling, machine sleep and

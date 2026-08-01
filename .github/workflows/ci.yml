@@ -25,6 +25,10 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm test
       - run: pnpm build
+      # The skill ships a committed bundle, because `npx skills add` copies a
+      # directory and runs no build. A generated artefact in the repository
+      # without a drift check eventually stops matching its source.
+      - run: pnpm check:skill
 
   # Separate job: a Playwright flake must not mask a type error.
   e2e:

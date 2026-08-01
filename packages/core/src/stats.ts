@@ -34,7 +34,13 @@ export type Summary = {
   breakMs: number
   completedFocus: number
   voidedFocus: number
+  /**
+   * Skipped phases, breaks included. `skippedFocus` is the focus-only count:
+   * a line that reads "3 done, 1 skipped" mixes two scopes unless it uses that
+   * one, since the counts around it are all focus-only.
+   */
   skipped: number
+  skippedFocus: number
   interruptions: { internal: number; external: number }
   /** Completed focus ÷ started focus, between 0 and 1. `null` when there are none. */
   completionRate: number | null
@@ -50,6 +56,7 @@ export function summarize(sessions: readonly SessionRecord[]): Summary {
     completedFocus: 0,
     voidedFocus: 0,
     skipped: 0,
+    skippedFocus: 0,
     interruptions: { internal: 0, external: 0 },
     completionRate: null,
     averageRating: null,
@@ -75,6 +82,7 @@ export function summarize(sessions: readonly SessionRecord[]): Summary {
       summary.overtimeMs += s.overtimeMs
       if (s.outcome === 'completed') summary.completedFocus++
       if (s.outcome === 'voided') summary.voidedFocus++
+      if (s.outcome === 'skipped') summary.skippedFocus++
     } else {
       summary.breakMs += s.actualMs
     }

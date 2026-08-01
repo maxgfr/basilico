@@ -8,7 +8,7 @@ import {
   formatClock,
   formatSigned,
 } from '../../lib/format'
-import { CyclePips } from './CyclePips'
+import { CycleStats } from './CycleStats'
 import { TimerRing } from './TimerRing'
 import { useNow } from './runtime'
 import { ActiveTaskBar } from '../tasks/ActiveTaskBar'
@@ -62,30 +62,32 @@ export function TimerScreen() {
         </div>
       )}
 
-      <TimerRing
-        mode={timer.mode}
-        progress={countingUp ? 0 : progressOf(timer, now)}
-        overtime={isOvertime}
-      >
-        <div className="flex flex-col items-center gap-3">
-          <div
-            role="timer"
-            aria-label={`${MODE_LABEL[timer.mode]}, ${formatApproximate(Math.max(0, value))}`}
-            className="tabular text-ink-100 text-5xl leading-none font-light tracking-tight sm:text-6xl"
-          >
-            {display}
+      {/* The counts belong to the ring, not to the controls: one group. */}
+      <div className="flex flex-col items-center gap-4">
+        <TimerRing
+          mode={timer.mode}
+          progress={countingUp ? 0 : progressOf(timer, now)}
+          overtime={isOvertime}
+        >
+          <div className="flex flex-col items-center gap-3">
+            <div
+              role="timer"
+              aria-label={`${MODE_LABEL[timer.mode]}, ${formatApproximate(Math.max(0, value))}`}
+              className="tabular text-ink-100 text-5xl leading-none font-light tracking-tight sm:text-6xl"
+            >
+              {display}
+            </div>
+            <div className="text-ink-600 text-sm">{MODE_LABEL[timer.mode]}</div>
           </div>
-          <div className="text-ink-600 flex items-center gap-3 text-sm">
-            <span>{MODE_LABEL[timer.mode]}</span>
-            <CyclePips done={timer.focusSinceLongBreak} total={settings.longBreakEvery} />
-          </div>
-        </div>
-      </TimerRing>
+        </TimerRing>
 
-      {/* State changes are announced, not every passing second. */}
-      <p aria-live="polite" className="sr-only">
-        {MODE_LABEL[timer.mode]} — {statusLabel(timer.status)}
-      </p>
+        {/* State changes are announced, not every passing second. */}
+        <p aria-live="polite" className="sr-only">
+          {MODE_LABEL[timer.mode]} — {statusLabel(timer.status)}
+        </p>
+
+        <CycleStats />
+      </div>
 
       <div className="flex flex-wrap items-center justify-center gap-3">
         <Button
