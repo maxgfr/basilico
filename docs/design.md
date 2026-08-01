@@ -79,8 +79,10 @@ on the account.
 
 ```
 packages/core/     TypeScript, zero DOM, injected clock — timer, cycles, sessions, tasks, stats, backups
+packages/cli/      the same core from a terminal; state file and clock injected too
 apps/web/          React interface + browser adapters under src/platform
 apps/extension/    Chrome MV3: alarms, notifications, offscreen audio
+skills/basilico/   the agent skill: SKILL.md + a committed bundle of the CLI
 ```
 
 The core knows nothing about the browser. That is what lets the timer be tested with a fake clock
@@ -164,6 +166,50 @@ is still `voided`, because it is in every export ever written.
 
 **Reset** is the one that records nothing, and so the one real exit from the
 cycle below.
+
+## Where you are, in words rather than dots
+
+The main screen used to carry four 1.5 rem pips beside the phase label. They
+counted the focus sessions done since the last long break, and nothing on screen
+said so: the only explanation was an `aria-label`, which sighted users never see.
+
+They also could not be read. A filled pip was a 6px `ink-600` disc; an empty one
+was a 6px `ink-600` ring with a 1px stroke and a 4px hole. Same colour, same
+size, four of them in a row — at that scale the two states are one state. The
+rule the component's own comment states, that colour alone never carries the
+information, was satisfied on paper and broken in practice.
+
+So the position is a sentence now — "Long break after 2 more focus sessions" —
+and it sits under the ring with the counts rather than inside a caption 280px
+wide. `focusUntilLongBreak` lives in the core beside `nextMode` so the wording
+cannot drift from the `>=` that makes a long break survive a reset; the phrasing
+stays in the interface.
+
+## A run is not a session
+
+"Session" was already taken: a `SessionRecord` is one phase. The thing people
+mean by "this session" — the stretch at the desk — had no name and no record,
+because the log is flat and indexed by time alone.
+
+So a **run** is a start timestamp kept beside the log, and `isRunOpen` is the one
+rule that says whether it is still the one you are in. A run ends on a **gap**,
+not on a reset: counting "the resets in this run" would be meaningless if a reset
+closed the run it is counted in — the number would always be zero. An hour away
+is the gap, and a phase that is still running is never a gap however long it has
+been going, because in flowtime a focus session can pass an hour without closing
+anything and reading the log alone would call the run stale while the work is
+happening.
+
+Two scopes are shown, not one. The run survives a reset and dies overnight-ish;
+today survives a lunch break and dies at midnight. When both carry the same
+figures only the run is printed — six identical numbers twice over say nothing
+the first line did not.
+
+**Resets live outside the log.** Reset records nothing; that is the point of it,
+and it is why the count has to be carried next to the log rather than derived
+from it. It stays local to the store: not in `backup.ts`, not in the CSV, not in
+the Open Pomodoro export. Every statistic in a backup is still reproducible from
+the log alone, and the export schema did not have to move.
 
 ## An endless cycle means endless
 
@@ -263,9 +309,36 @@ two hours, and that is what tells you whether today fits. Past the daily goal it
 A task estimated above seven pomodoros is flagged. That is Cirillo's threshold: beyond it you cannot
 picture the stretches of work any more, so the estimate is a guess and the task is really several.
 
+## A terminal is the same timer
+
+The core has no DOM and takes its clock as an argument, which was always about
+testability. It buys something else: a CLI is stateless between two invocations,
+and so is this timer. Nothing counts down; `{ mode, startedAt, endsAt }` sits on
+disk and every command recomputes the rest. `packages/cli` therefore reimplements
+nothing — it reconciles with `advance`, ends phases with `finish`, and reads its
+counts out of `summarize`, exactly as the store does.
+
+The reconcile loop runs until it settles rather than once, because a single call
+closes a single phase and a short break can have come and gone inside the same
+absence. It terminates because a phase resumed after an absence starts _now_.
+
+`npx skills add` copies a directory and runs no build, so the skill ships a
+committed esbuild bundle — the core exports raw TypeScript and pulls in zod.
+`pnpm check:skill` rebuilds it in memory and fails on any difference: a generated
+artefact in a repository without that guard eventually stops matching its source.
+
+**The bridge is `export` and `import`, and that is all it can be.** `localStorage`
+is not readable from a shell and this project runs no server, so the two halves
+exchange the backup format rather than sharing a store. It is a copy, and the
+docs say so rather than implying a link.
+
+There is **no alarm**. Without a daemon, a command that is not running cannot
+ring — the same limitation the README already states for a closed tab, and the
+same answer: `status` catches up instead of warning.
+
 ## Not built
 
 - **Sync between devices.** Deliberate: it would need a server, which is the one thing this project
-  refuses. Export and import cover moving machines.
+  refuses. Export and import cover moving machines — including between the browser and the CLI.
 - **A Chrome Web Store listing.** The extension is loaded unpacked from a release zip; publishing
   needs a paid developer account and a review round.

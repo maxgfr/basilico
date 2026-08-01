@@ -15,6 +15,9 @@ function resetApp() {
     tasks: [],
     activeTaskId: null,
     lastEnded: null,
+    runStartedAt: null,
+    resetsInRun: 0,
+    resetsToday: { day: '', count: 0 },
     pending: [],
   })
 }
@@ -252,6 +255,51 @@ describe('ending a session by hand', () => {
       await user.click(screen.getByRole('button', { name: 'Skip' }))
       expect(useApp.getState().timer.status).toBe('running')
     }
+  })
+})
+
+const counts = () => screen.getByRole('region', { name: 'Where you are in the cycle' })
+
+describe('where you are in the cycle', () => {
+  it('says how far the long break is, without any dots to decode', () => {
+    render(<App />)
+    expect(counts()).toHaveTextContent('Long break after 4 more focus sessions.')
+    // A fresh install has nothing to count, so it says nothing.
+    expect(counts()).not.toHaveTextContent('done')
+  })
+
+  it('counts a skipped focus, and an abandoned one, on the run', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+
+    await user.click(screen.getByRole('button', { name: 'Start' }))
+    await user.click(screen.getByRole('button', { name: 'Skip' }))
+    expect(counts()).toHaveTextContent('This run')
+    expect(counts()).toHaveTextContent('1 skipped')
+
+    // Skipping hands over a break; skip that too and it must not be counted —
+    // every figure on the line is focus-only.
+    await user.click(screen.getByRole('button', { name: 'Skip' }))
+    expect(counts()).toHaveTextContent('1 skipped')
+
+    await user.click(screen.getByRole('button', { name: 'Abandon this one' }))
+    expect(counts()).toHaveTextContent('1 abandoned')
+  })
+
+  it('counts a reset, which the log never records', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+
+    await user.click(screen.getByRole('button', { name: 'Start' }))
+    await user.click(screen.getByRole('button', { name: 'Reset' }))
+
+    expect(useApp.getState().sessions).toHaveLength(0)
+    expect(counts()).toHaveTextContent('1 reset')
+  })
+
+  it('no longer ships the pips nobody could read', () => {
+    render(<App />)
+    expect(screen.queryByLabelText(/focus sessions before the long break/)).toBeNull()
   })
 })
 

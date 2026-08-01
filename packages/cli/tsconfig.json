@@ -1,0 +1,8 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    // The only package that touches the filesystem and the process.
+    "types": ["node"]
+  },
+  "include": ["src"]
+}

@@ -12,6 +12,8 @@ import {
   creditPomodoro,
   defaultSettings,
   finish,
+  isRunOpen,
+  lastSession,
   pause,
   parseSettings,
   carryOver,
@@ -46,6 +48,13 @@ export const STORAGE_KEY = 'basilico:v1:app'
 
 export type EndedSession = { record: SessionRecord; lateByMs: number }
 
+/**
+ * Resets recorded by day, so the count rolls over at midnight like every other
+ * "today" figure. A reset writes nothing to the log — that is deliberate, and
+ * it is why this has to be carried separately.
+ */
+export type ResetTally = { day: string; count: number }
+
 type AppState = {
   settings: Settings
   timer: TimerState
@@ -54,6 +63,15 @@ type AppState = {
   activeTaskId: string | null
   /** Last closed session, for the catch-up banner. */
   lastEnded: EndedSession | null
+  /**
+   * Start of the current run — one contiguous stretch at the desk, which is
+   * what people mean by "this session" and which the flat log cannot express.
+   * `null` until the first start. See `isRunOpen` for what closes it.
+   */
+  runStartedAt: number | null
+  /** Resets in the current run, and today. Neither is derivable from the log. */
+  resetsInRun: number
+  resetsToday: ResetTally
   /** Queue of side effects (sound, notification) drained by the runtime. */
   pending: TimerEvent[]
   hydrated: boolean
@@ -133,6 +151,9 @@ export const useApp = create<AppState>()(
         tasks: [],
         activeTaskId: null,
         lastEnded: null,
+        runStartedAt: null,
+        resetsInRun: 0,
+        resetsToday: { day: '', count: 0 },
         pending: [],
         hydrated: false,
 
@@ -141,7 +162,17 @@ export const useApp = create<AppState>()(
         startNow: (now) => {
           const state = get()
           const task = state.tasks.find((t) => t.id === state.activeTaskId) ?? null
+          // Starting is the only moment a run can begin, and the only place
+          // that needs to ask whether the previous one is still going.
+          const open = isRunOpen({
+            runStartedAt: state.runStartedAt,
+            idle: true,
+            lastEndedAt: lastSession(state.sessions)?.endedAt ?? null,
+            now,
+          })
           set({
+            runStartedAt: open ? state.runStartedAt : now,
+            resetsInRun: open ? state.resetsInRun : 0,
             // The tag travels with the session so the per-tag stats can exist at
             // all: reading it back from the task later would rewrite history
             // whenever a task is retagged.
@@ -165,7 +196,26 @@ export const useApp = create<AppState>()(
           set({ timer: pause(timer, ctx(now)) })
         },
 
-        resetPhase: (now) => set({ timer: resetCore(get().timer, ctx(now)), lastEnded: null }),
+        /**
+         * Reset records nothing in the log — that is the whole point of it —
+         * so the only way to report "you bailed out three times this
+         * afternoon" is to count it here. It does **not** close the run: a
+         * count of the resets in a run a reset had just ended would always
+         * read zero.
+         */
+        resetPhase: (now) => {
+          const state = get()
+          const day = dayKey(now)
+          set({
+            timer: resetCore(state.timer, ctx(now)),
+            lastEnded: null,
+            resetsInRun: state.resetsInRun + 1,
+            resetsToday:
+              state.resetsToday.day === day
+                ? { day, count: state.resetsToday.count + 1 }
+                : { day, count: 1 },
+          })
+        },
         skipPhase: (now) => commit(finish(get().timer, ctx(now), 'skipped')),
         donePhase: (now) => commit(finish(get().timer, ctx(now), 'completed')),
         voidPhase: (now) => commit(finish(get().timer, ctx(now), 'voided')),
@@ -245,6 +295,9 @@ export const useApp = create<AppState>()(
             timer: createTimerState(backup.settings),
             activeTaskId: null,
             lastEnded: null,
+            runStartedAt: null,
+            resetsInRun: 0,
+            resetsToday: { day: '', count: 0 },
           }),
 
         clearEverything: () =>
@@ -254,6 +307,9 @@ export const useApp = create<AppState>()(
             activeTaskId: null,
             lastEnded: null,
             timer: createTimerState(get().settings),
+            runStartedAt: null,
+            resetsInRun: 0,
+            resetsToday: { day: '', count: 0 },
           }),
       }
     },
@@ -275,6 +331,10 @@ export const useApp = create<AppState>()(
         tasks: state.tasks,
         activeTaskId: state.activeTaskId,
         lastEnded: state.lastEnded,
+        // Closing the tab in the middle of a run must not wipe its count.
+        runStartedAt: state.runStartedAt,
+        resetsInRun: state.resetsInRun,
+        resetsToday: state.resetsToday,
       }),
       merge: (persisted, current) => {
         const saved = (persisted ?? {}) as Partial<AppState>
@@ -288,6 +348,15 @@ export const useApp = create<AppState>()(
           // Normalised then rolled forward on load: a task planned for a past day
           // is a leftover, and left dated it would silently drop out of today.
           tasks: carryOver((saved.tasks ?? []).map(normalizeTask), dayKey(Date.now())),
+          // Written by a version that did not have them, or by a corrupted
+          // save: the defaults are the honest answer, not a crash.
+          runStartedAt: saved.runStartedAt ?? null,
+          resetsInRun: saved.resetsInRun ?? 0,
+          resetsToday:
+            typeof saved.resetsToday?.day === 'string' &&
+            typeof saved.resetsToday.count === 'number'
+              ? saved.resetsToday
+              : { day: '', count: 0 },
           pending: [],
         }
       },

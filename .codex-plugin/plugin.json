@@ -1,0 +1,24 @@
+{
+  "name": "basilico",
+  "version": "0.1.0",
+  "description": "Run and report on your work sessions from the terminal: a focus timer with cycles, tasks and real statistics.",
+  "author": {
+    "name": "maxgfr",
+    "url": "https://github.com/maxgfr"
+  },
+  "homepage": "https://github.com/maxgfr/basilico",
+  "repository": "https://github.com/maxgfr/basilico",
+  "license": "MIT",
+  "keywords": ["pomodoro", "focus", "timer", "productivity", "tasks", "statistics"],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "basilico",
+    "shortDescription": "A focus timer you can drive from a terminal",
+    "longDescription": "Start, pause and end focus sessions; track interruptions; keep a today plan; and read back what the day actually looked like. The same domain core as the basilico web app, so the log and the export are interchangeable.",
+    "developerName": "maxgfr",
+    "category": "Productivity",
+    "capabilities": ["Interactive", "Read", "Write"],
+    "defaultPrompt": ["Start a focus session.", "Where am I in my cycle?"],
+    "websiteURL": "https://maxgfr.github.io/basilico/"
+  }
+}

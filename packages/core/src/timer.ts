@@ -89,6 +89,17 @@ export function nextMode(mode: Mode, focusSinceLongBreak: number, settings: Sett
   return focusSinceLongBreak >= settings.longBreakEvery ? 'longBreak' : 'shortBreak'
 }
 
+/**
+ * Focus sessions still to do before the long break falls due. `0` means the
+ * long break is already owed — which a reset preserves, hence the clamp.
+ *
+ * The arithmetic lives here rather than in the interface so it cannot drift
+ * from the `>=` in `nextMode`, which is what makes a due long break survive.
+ */
+export function focusUntilLongBreak(state: TimerState, settings: Settings): number {
+  return Math.max(0, settings.longBreakEvery - state.focusSinceLongBreak)
+}
+
 /** Break length proposed in flowtime, proportional to the time worked. */
 export function flowtimeBreakMs(workedMs: number, settings: Settings): number {
   return Math.max(60_000, Math.round(workedMs * settings.flowtimeBreakRatio))
