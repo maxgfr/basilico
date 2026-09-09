@@ -1,9 +1,11 @@
 ---
 name: basilico
-description: "Use when the user wants to run, track, or report on work sessions from the terminal: start, pause, resume, finish, skip, abandon, or reset a pomodoro; record interruptions and notes; manage the task plan; inspect cycles or daily statistics; import/export browser-compatible data; or install basilico prompts. The bundled zero-dependency CLI reconciles its absolute-deadline timer with the clock before every action and is the source of truth for counts and outcomes. Trigger on requests such as 'start a focus session', 'je commence une session', 'where am I', 'combien de cycles', 'pause the timer', 'I'm done', 'skip this', 'j'abandonne', 'note this session', or 'how was my day'. Not for notifications: without a daemon nothing can ring."
+description: Manage Pomodoro sessions, interruptions, task plans, statistics, and browser-compatible data with the Basilico CLI.
 license: MIT
 metadata:
   version: 0.1.0
+  opencode/autoinvoke: 'false'
+disable-model-invocation: true
 ---
 
 # basilico — a focus timer a coding agent can actually drive

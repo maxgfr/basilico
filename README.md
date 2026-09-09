@@ -168,3 +168,21 @@ Issues and pull requests are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 Pomodoro® and The Pomodoro Technique® are registered trademarks of Francesco Cirillo. basilico is
 not affiliated with, associated with, or endorsed by Pomodoro®.
+
+## Manual skill invocation
+
+These skills run when explicitly invoked: `basilico`. Use `$name` in Codex or `/name` in Claude Code and OpenCode (with the plugin namespace when installed as a Claude plugin).
+
+The skill bundle disables implicit selection in Codex and Claude Code. OpenCode V2 reads `metadata.opencode/autoinvoke: "false"`. For OpenCode V1, merge these entries into `permission.skill` in `~/.config/opencode/opencode.json` or the project configuration; retain unrelated permissions:
+
+```json
+{
+  "permission": {
+    "skill": {
+      "basilico": "deny"
+    }
+  }
+}
+```
+
+On OpenCode 1.18.30, these rules hide the skills from the agent and reject skill-tool loading, while explicit `/name` commands remain available. Installation with `skills add` does not apply this OpenCode V1 configuration.
