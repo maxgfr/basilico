@@ -80,9 +80,9 @@ the page is a content script restricted to the app's own origin; the extension r
 ## In your terminal, and in your coding agent
 
 The domain core has no DOM and takes its clock as an argument, so the same timer
-runs from a shell. `basilico` is an agent skill: install it once and Claude Code
-and Codex can both start a session, note an interruption, and tell you where the
-day stands.
+runs from a shell. `basilico` is an agent skill: install it once and your coding
+agent (Claude Code, Codex, OpenCode…) can start a session, note an interruption,
+and tell you where the day stands.
 
 ```sh
 npx skills add maxgfr/basilico --agent '*'
@@ -169,6 +169,6 @@ not affiliated with, associated with, or endorsed by Pomodoro®.
 
 ## Manual skill invocation
 
-These skills run when explicitly invoked: `basilico`. Use `$name` in Codex or `/name` in Claude Code.
+These skills run when explicitly invoked: `basilico`. Use `$name` in Codex or `/name` in Claude Code and OpenCode.
 
 The skill bundle disables implicit selection: Claude Code and OpenCode read `disable-model-invocation: true` from `SKILL.md`.
