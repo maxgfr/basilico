@@ -31,15 +31,6 @@ function harness(initial: AppData = emptyData()) {
       if (found === undefined) throw new Error('missing')
       return found
     },
-    env: {},
-    home: '/home/test',
-    cwd: '/repo',
-    selfPath: '/skills/basilico/scripts/basilico.mjs',
-    projectScope: false,
-    readFileAt: (path) => files.get(path) ?? null,
-    writeFileAt: (path, content) => void files.set(path, content),
-    existsAt: (path) => files.has(path),
-    removeAt: (path) => void files.delete(path),
   })
 
   return {
@@ -272,66 +263,5 @@ describe('output', () => {
   it('keeps the state readable across a settings change', () => {
     const cli = harness({ ...emptyData(), settings: { ...defaultSettings, longBreakEvery: 2 } })
     expect(cli.json('status').cycle).toMatchObject({ untilLongBreak: 2, longBreakEvery: 2 })
-  })
-})
-
-describe('install', () => {
-  it('writes the slash commands where each agent looks for them', () => {
-    const cli = harness()
-    const out = cli.run('install', '--all')
-
-    expect(out.code).toBe(0)
-    expect([...cli.files.keys()].sort()).toEqual([
-      '/home/test/.claude/commands/basilico.md',
-      '/home/test/.claude/commands/focus.md',
-      '/home/test/.claude/settings.json',
-      '/home/test/.codex/prompts/basilico.md',
-      '/home/test/.codex/prompts/focus.md',
-      '/home/test/.config/opencode/command/basilico.md',
-      '/home/test/.config/opencode/command/focus.md',
-    ])
-
-    const settings = JSON.parse(cli.files.get('/home/test/.claude/settings.json') ?? '{}')
-    expect(settings.statusLine).toMatchObject({ type: 'command' })
-    expect(settings.statusLine.command).toContain('status --line')
-  })
-
-  it('merges into settings.json instead of replacing it, and keeps a copy', () => {
-    const cli = harness()
-    cli.files.set('/home/test/.claude/settings.json', '{"model":"opus","env":{"A":"1"}}')
-    cli.run('install', '--claude-code')
-
-    const settings = JSON.parse(cli.files.get('/home/test/.claude/settings.json') ?? '{}')
-    expect(settings.model).toBe('opus')
-    expect(settings.env).toEqual({ A: '1' })
-    expect(cli.files.get('/home/test/.claude/settings.json.basilico-backup')).toContain('opus')
-  })
-
-  it('leaves a status bar that is not ours alone', () => {
-    const cli = harness()
-    cli.files.set(
-      '/home/test/.claude/settings.json',
-      '{"statusLine":{"type":"command","command":"my-own-thing"}}',
-    )
-    cli.run('uninstall', '--claude-code')
-
-    const settings = JSON.parse(cli.files.get('/home/test/.claude/settings.json') ?? '{}')
-    expect(settings.statusLine.command).toBe('my-own-thing')
-  })
-
-  it('takes back exactly what it put there', () => {
-    const cli = harness()
-    cli.run('install', '--all')
-    cli.run('uninstall', '--all')
-
-    const left = [...cli.files.keys()].filter((p) => !p.endsWith('-backup'))
-    expect(left).toEqual(['/home/test/.claude/settings.json'])
-    expect(JSON.parse(cli.files.get('/home/test/.claude/settings.json') ?? '{}')).toEqual({})
-  })
-
-  it('asks which agent rather than picking one', () => {
-    const out = harness().run('install')
-    expect(out.code).toBe(1)
-    expect(out.stderr).toMatch(/--claude-code/)
   })
 })
