@@ -4,7 +4,6 @@ description: Manage Pomodoro sessions, interruptions, task plans, statistics, an
 license: MIT
 metadata:
   version: 0.1.0
-  opencode/autoinvoke: 'false'
 disable-model-invocation: true
 ---
 
@@ -90,24 +89,6 @@ node scripts/basilico.mjs export | import <file>
 wherever `$BASILICO_STATE` points — one file, in the user's home rather than in
 a repository, because a work session is not a property of the project you happen
 to be sitting in.
-
-## Optional wiring
-
-The skill works as-is on every agent. These add slash commands (`/focus`,
-`/basilico`) and, on Claude Code, a status bar showing the phase and the time
-left:
-
-```sh
-node scripts/basilico.mjs install --claude-code   # commands + status bar
-node scripts/basilico.mjs install --codex         # ~/.codex/prompts
-node scripts/basilico.mjs install --opencode      # ~/.config/opencode/command
-node scripts/basilico.mjs install --all
-```
-
-Every write prints its path. `--project` scopes the Claude Code install to
-`./.claude`. `uninstall` takes back exactly what `install` put there, and leaves
-a status bar it did not write alone. `settings.json` is read, merged and written
-back, never replaced, with the previous version kept beside it.
 
 ## What it deliberately does not do
 

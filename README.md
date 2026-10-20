@@ -80,9 +80,9 @@ the page is a content script restricted to the app's own origin; the extension r
 ## In your terminal, and in your coding agent
 
 The domain core has no DOM and takes its clock as an argument, so the same timer
-runs from a shell. `basilico` is an agent skill: install it once and Claude Code,
-Codex and OpenCode can all start a session, note an interruption, and tell you
-where the day stands.
+runs from a shell. `basilico` is an agent skill: install it once and Claude Code
+and Codex can both start a session, note an interruption, and tell you where the
+day stands.
 
 ```sh
 npx skills add maxgfr/basilico --agent '*'
@@ -98,9 +98,7 @@ basilico skip | abandon         # keeps the time, loses the pomodoro
 basilico stats --today
 ```
 
-Add `--json` to any command for machine-readable output, and
-`basilico install --all` to wire up `/focus`, `/basilico` and a status bar
-showing the phase and the time left.
+Add `--json` to any command for machine-readable output.
 
 **There is no sync with the browser, and there cannot be** — `localStorage` is not
 readable from a shell and this project runs no server. `basilico export` writes
@@ -171,18 +169,6 @@ not affiliated with, associated with, or endorsed by Pomodoro®.
 
 ## Manual skill invocation
 
-These skills run when explicitly invoked: `basilico`. Use `$name` in Codex or `/name` in Claude Code and OpenCode (with the plugin namespace when installed as a Claude plugin).
+These skills run when explicitly invoked: `basilico`. Use `$name` in Codex or `/name` in Claude Code (with the plugin namespace when installed as a Claude plugin).
 
-The skill bundle disables implicit selection in Codex and Claude Code. OpenCode V2 reads `metadata.opencode/autoinvoke: "false"`. For OpenCode V1, merge these entries into `permission.skill` in `~/.config/opencode/opencode.json` or the project configuration; retain unrelated permissions:
-
-```json
-{
-  "permission": {
-    "skill": {
-      "basilico": "deny"
-    }
-  }
-}
-```
-
-On OpenCode 1.18.30, these rules hide the skills from the agent and reject skill-tool loading, while explicit `/name` commands remain available. Installation with `skills add` does not apply this OpenCode V1 configuration.
+The skill bundle disables implicit selection in Codex and Claude Code.

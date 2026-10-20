@@ -1,7 +1,6 @@
-import { existsSync, mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs'
+import { mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { homedir } from 'node:os'
-import { fileURLToPath } from 'node:url'
 import { randomUUID } from 'node:crypto'
 import { run, type Io } from './run'
 import type { AppData } from './state'
@@ -45,15 +44,6 @@ export function main(argv: readonly string[]): number {
     },
     writeState: (data: AppData) => writeAtomic(path, `${JSON.stringify(data, null, 2)}\n`),
     readFile: (p: string) => readFileSync(p, 'utf8'),
-    env: process.env,
-    home,
-    cwd: process.cwd(),
-    selfPath: fileURLToPath(import.meta.url),
-    projectScope: false,
-    readFileAt: (p: string) => (existsSync(p) ? readFileSync(p, 'utf8') : null),
-    writeFileAt: writeAtomic,
-    existsAt: existsSync,
-    removeAt: (p: string) => rmSync(p, { force: true }),
   }
 
   const outcome = run(argv, io)

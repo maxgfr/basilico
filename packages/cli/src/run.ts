@@ -21,7 +21,6 @@ import {
 } from './commands'
 import { render, statusLine } from './render'
 import { parseData, type AppData } from './state'
-import { runInstall } from './install'
 import { dayKey } from '@basilico/core'
 
 export const HELP = `basilico — a focus timer you can drive from a terminal.
@@ -46,8 +45,6 @@ export const HELP = `basilico — a focus timer you can drive from a terminal.
   export                     a backup the web app imports as is
   import <file>
 
-  install|uninstall --claude-code|--codex|--opencode|--all [--project]
-
 Add --json to any of these to get the same answer as machine-readable JSON.
 State lives in ~/.basilico/state.json, or wherever $BASILICO_STATE points.
 
@@ -62,18 +59,6 @@ export type Io = {
   writeState: (data: AppData) => void
   /** Reads a file the user named. Throws so `import` can report the failure. */
   readFile: (path: string) => string
-  env: Record<string, string | undefined>
-  home: string
-  cwd: string
-  /** Path to this engine, so the commands it writes can call back into it. */
-  selfPath: string
-  projectScope: boolean
-  // Only the installer touches these: it is the one thing that writes outside
-  // its own state file.
-  readFileAt: (path: string) => string | null
-  writeFileAt: (path: string, content: string) => void
-  existsAt: (path: string) => boolean
-  removeAt: (path: string) => void
 }
 
 export type Outcome = { stdout: string; stderr: string; code: number }
@@ -106,9 +91,6 @@ export function run(argv: readonly string[], io: Io): Outcome {
 
   if (command === 'help' || flags.opts.has('help')) {
     return { stdout: HELP, stderr: '', code: 0 }
-  }
-  if (command === 'install' || command === 'uninstall') {
-    return runInstall(command, flags.opts, { ...io, projectScope: flags.opts.has('project') })
   }
 
   const deps: Deps = { now: io.now, uid: io.uid }
