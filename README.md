@@ -169,6 +169,6 @@ not affiliated with, associated with, or endorsed by Pomodoro®.
 
 ## Manual skill invocation
 
-These skills run when explicitly invoked: `basilico`. Use `$name` in Codex or `/name` in Claude Code (with the plugin namespace when installed as a Claude plugin).
+These skills run when explicitly invoked: `basilico`. Use `$name` in Codex or `/name` in Claude Code.
 
-The skill bundle disables implicit selection in Codex and Claude Code.
+The skill bundle disables implicit selection: Claude Code and OpenCode read `disable-model-invocation: true` from `SKILL.md`.
