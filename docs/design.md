@@ -67,13 +67,22 @@ is throttled or frozen.
 
 ## Storage
 
-**localStorage, deliberately.** A session record is roughly 100 bytes; ten sessions a day for a year
-is about 300 kB against a ~5 MB quota. IndexedDB would add asynchrony everywhere and buys nothing —
-it is subject to exactly the same Safari eviction. Everything goes through a single storage module,
-with `idb-keyval` as a documented escape hatch should history ever pass ~2 MB.
+**IndexedDB, because the origin is shared.** The app is served from `maxgfr.github.io`, one origin
+for every Pages project on the account, and localStorage belongs to the origin: its ~5 MB quota is
+split between all of them. A session log that only grows has no business there — once another site
+fills the quota, every save fails. The whole state is one JSON snapshot in an IndexedDB database
+named `basilico-store`, behind a single storage module (`apps/web/src/platform/storage.ts`) that:
 
-Keys are prefixed `basilico:v1:` because the GitHub Pages origin is shared with every other project
-on the account.
+- moves a state written to localStorage by an earlier version into IndexedDB once, then removes it;
+- writes nothing until the saved state has been read, so the defaults rendered meanwhile can never
+  replace real data (the page itself waits for that read before it renders);
+- never lets a refused write throw: it raises a banner saying the latest changes will not survive a
+  reload, and pointing to the export;
+- copies a write still in flight to a localStorage journal when the page is hidden, because a tab
+  closed right after a change would otherwise take the asynchronous write with it.
+
+Names are prefixed (`basilico:v1:app`, `basilico-store`, Workbox `basilico-v1`) because the origin is
+shared with every other project on the account.
 
 ## Architecture
 
@@ -327,7 +336,7 @@ committed esbuild bundle — the core exports raw TypeScript and pulls in zod.
 `pnpm check:skill` rebuilds it in memory and fails on any difference: a generated
 artefact in a repository without that guard eventually stops matching its source.
 
-**The bridge is `export` and `import`, and that is all it can be.** `localStorage`
+**The bridge is `export` and `import`, and that is all it can be.** Browser storage
 is not readable from a shell and this project runs no server, so the two halves
 exchange the backup format rather than sharing a store. It is a copy, and the
 docs say so rather than implying a link.

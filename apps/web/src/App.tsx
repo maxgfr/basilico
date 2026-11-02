@@ -1,3 +1,4 @@
+import { useSyncExternalStore } from 'react'
 import { ROUTES, useRoute, type RouteName } from './lib/router'
 import { TimerScreen } from './features/timer/TimerScreen'
 import { TaskList } from './features/tasks/TaskList'
@@ -10,6 +11,7 @@ import { useAlerts } from './platform/alerts'
 import { useTheme } from './platform/theme'
 import { useExtensionBridge } from './platform/extension'
 import { ThemeToggle } from './ui/ThemeToggle'
+import { storageFailed, subscribeStorage } from './platform/storage'
 
 export function App() {
   const route = useRoute()
@@ -24,6 +26,7 @@ export function App() {
   return (
     <div className="mx-auto flex min-h-full max-w-5xl flex-col px-5">
       <TopBar route={route} />
+      <StorageWarning />
 
       <main className="flex-1">
         {route === 'timer' && (
@@ -40,6 +43,25 @@ export function App() {
 
       <Footer />
     </div>
+  )
+}
+
+/**
+ * The browser refused the last save. The origin is shared with other sites,
+ * whose data counts against the same quota: saying nothing would let someone
+ * keep working on a history that disappears at the next reload.
+ */
+function StorageWarning() {
+  const failed = useSyncExternalStore(subscribeStorage, storageFailed)
+  if (!failed) return null
+  return (
+    <p role="alert" className="border-danger text-danger mb-4 rounded-lg border px-4 py-3 text-sm">
+      Storage for this site is full or blocked — your latest changes will be lost on reload.{' '}
+      <a href={ROUTES.settings.hash} className="underline underline-offset-4">
+        Export a backup
+      </a>{' '}
+      to keep them.
+    </p>
   )
 }
 

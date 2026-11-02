@@ -96,7 +96,7 @@ to be sitting in.
   cannot ring. `status` catches up instead — it reports "your focus ended 12
   minutes ago" and records the session at the right time. The web app plus its
   Chrome extension is what covers the notification case.
-- **No sync with the browser.** `localStorage` is not readable from a shell, and
+- **No sync with the browser.** Browser storage is not readable from a shell, and
   this project refuses to run a server. `export` and `import` are the bridge, and
   they are honest about being a copy rather than a link.
 - **No settings editing.** Durations, cycle length and modes are changed in the

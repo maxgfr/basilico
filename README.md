@@ -100,7 +100,7 @@ basilico stats --today
 
 Add `--json` to any command for machine-readable output.
 
-**There is no sync with the browser, and there cannot be** — `localStorage` is not
+**There is no sync with the browser, and there cannot be** — browser storage is not
 readable from a shell and this project runs no server. `basilico export` writes
 the same backup Settings → Data reads, and `basilico import` accepts one back.
 It is a copy, not a link.

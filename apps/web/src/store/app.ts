@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { createJSONStorage, persist } from 'zustand/middleware'
+import { appStorage } from '../platform/storage'
 import {
   addInterruption,
   advance,
@@ -42,7 +43,8 @@ import {
 
 /**
  * `maxgfr.github.io` is an origin shared by every Pages project on the account:
- * each key is prefixed so it cannot collide with another repository.
+ * each key is prefixed so it cannot collide with another repository. The state
+ * itself is kept in IndexedDB (see platform/storage), under this name.
  */
 export const STORAGE_KEY = 'basilico:v1:app'
 
@@ -316,7 +318,7 @@ export const useApp = create<AppState>()(
     {
       name: STORAGE_KEY,
       version: 1,
-      storage: createJSONStorage(() => localStorage),
+      storage: createJSONStorage(() => appStorage),
       // `pending` and `hydrated` are ephemeral: persisting them would replay a
       // sound on reload and lie about the hydration state.
       //
@@ -360,6 +362,8 @@ export const useApp = create<AppState>()(
           pending: [],
         }
       },
+      // Called on failure too (without a state): the interface must still
+      // appear, on the defaults, and storage writes stay off until a read works.
       onRehydrateStorage: () => (state) => {
         state?.tick(Date.now())
         useApp.setState({ hydrated: true })
