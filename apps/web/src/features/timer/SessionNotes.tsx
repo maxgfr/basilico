@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useApp } from '../../store/app'
 import { Button } from '../../ui/Button'
 
@@ -43,8 +43,13 @@ export function SessionLog() {
   const id = record?.id
 
   // A fresh session means a fresh note field, otherwise the previous one's text
-  // would be sitting there waiting to be attributed to the wrong session.
-  useEffect(() => setNote(''), [id])
+  // would be sitting there waiting to be attributed to the wrong session. Reset
+  // while rendering, not in an effect, so the stale text is never shown.
+  const [noteFor, setNoteFor] = useState(id)
+  if (noteFor !== id) {
+    setNoteFor(id)
+    setNote('')
+  }
 
   if (!record || record.mode !== 'focus' || record.outcome === 'skipped') return null
 
