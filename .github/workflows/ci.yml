@@ -41,8 +41,14 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      # Read from the app that depends on Playwright: the root has no
+      # node_modules/@playwright/test, and an empty version would key the cache
+      # to whatever browser revision was stored first. The assignment fails the
+      # step instead.
       - id: pw
-        run: echo "v=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
+        run: |
+          v=$(cd apps/web && node -p "require('@playwright/test/package.json').version")
+          echo "v=$v" >> "$GITHUB_OUTPUT"
       - uses: actions/cache@v6
         id: pwcache
         with:

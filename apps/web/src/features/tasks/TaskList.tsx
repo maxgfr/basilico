@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useId, useRef, useState, type FormEvent } from 'react'
+import { useCallback, useEffect, useId, useState, type FormEvent } from 'react'
 import {
   archivedTasks,
   backlog,
@@ -568,7 +568,7 @@ function AddTaskForm({
 }) {
   const [raw, setRaw] = useState('')
   const [estimate, setEstimate] = useState(1)
-  const listId = useRef(`tags-${Math.random().toString(36).slice(2)}`).current
+  const listId = `tags-${useId()}`
 
   const submit = (event: FormEvent) => {
     event.preventDefault()

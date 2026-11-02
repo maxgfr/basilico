@@ -8,6 +8,11 @@
   },
   "rules": {
     "react/react-in-jsx-scope": "off",
+    // React Compiler rules, which this app does not use. `purity` flags the
+    // clock reads that date today's stats on purpose; `refs` flags the menu's
+    // trigger props being spread onto the button that owns their ref.
+    "react/purity": "off",
+    "react/refs": "off",
     "jsx-a11y/prefer-tag-over-role": "off",
     "jsx-a11y/no-noninteractive-tabindex": [
       "error",
