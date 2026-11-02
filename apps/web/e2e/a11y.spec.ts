@@ -19,8 +19,20 @@ for (const theme of ['dark', 'light'] as const) {
   for (const screen of SCREENS) {
     test(`no accessibility violation — ${screen.name}, ${theme} theme`, async ({ page }) => {
       await page.goto('/')
-      await page.evaluate((theme) => {
-        const raw = JSON.parse(localStorage.getItem('basilico:v1:app') ?? '{"state":{}}')
+      // The state lives in IndexedDB (platform/storage): it is seeded there.
+      await page.evaluate(async (theme) => {
+        const db = await new Promise<IDBDatabase>((resolve, reject) => {
+          const request = indexedDB.open('basilico-store', 1)
+          request.onupgradeneeded = () => request.result.createObjectStore('kv')
+          request.onsuccess = () => resolve(request.result)
+          request.onerror = () => reject(request.error)
+        })
+        const kv = (mode: IDBTransactionMode) => db.transaction('kv', mode).objectStore('kv')
+        const stored = await new Promise<unknown>((resolve) => {
+          const get = kv('readonly').get('basilico:v1:app')
+          get.onsuccess = () => resolve(get.result)
+        })
+        const raw = JSON.parse(typeof stored === 'string' ? stored : '{"state":{}}')
         raw.state.settings = { ...raw.state.settings, theme }
         // Some content: an empty page tests almost nothing.
         raw.state.tasks = [
@@ -56,7 +68,13 @@ for (const theme of ['dark', 'light'] as const) {
             rating: null,
           },
         ]
-        localStorage.setItem('basilico:v1:app', JSON.stringify(raw))
+        await new Promise<void>((resolve, reject) => {
+          const tx = db.transaction('kv', 'readwrite')
+          tx.objectStore('kv').put(JSON.stringify(raw), 'basilico:v1:app')
+          tx.oncomplete = () => resolve()
+          tx.onerror = () => reject(tx.error)
+        })
+        db.close()
       }, theme)
 
       await page.goto(`/${screen.hash}`)
